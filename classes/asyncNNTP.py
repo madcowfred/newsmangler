@@ -118,7 +118,7 @@ class asyncNNTP(asyncore.dispatcher):
 	# There is some data waiting to be read
 	def handle_read(self):
 		try:
-			self._readbuf += self.recv(4096)
+			self._readbuf += self.recv(16384)
 		except socket.error, msg:
 			self.really_close(msg)
 			return
