@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # ---------------------------------------------------------------------------
-# $Id: HTTPMonster.py 3862 2005-09-27 06:42:49Z freddie $
+# $Id$
 # ---------------------------------------------------------------------------
 # Copyright (c) 2005, freddie@madcowdisease.org
 # All rights reserved.
@@ -36,12 +36,14 @@ import sys
 from ConfigParser import ConfigParser
 from optparse import OptionParser
 
+from classes.Controller import Controller
+
 # ---------------------------------------------------------------------------
 
 def main():
 	# Parse our command line options
-	parser = OptionParser()
-	parser.add_option('--group',
+	parser = OptionParser(usage='usage: %prog [options] dir1 dir2 ... dirN')
+	parser.add_option('-g', '--group',
 		dest='group',
 		help='post to a different group than the default',
 	)
@@ -49,10 +51,31 @@ def main():
 		action='store_true',
 		dest='generate_nzbs',
 		default=False,
-		help='generate NZB files for each post',
+		help='generate a .NZB file for each post',
 	)
 	
 	(options, args) = parser.parse_args()
+	
+	# No args? We have nothing to do!
+	if not args:
+		parser.print_help()
+		sys.exit(1)
+	
+	# Make sure at least one of the args exists
+	dirs = []
+	for arg in args:
+		if os.path.isdir(arg):
+			dirs.append(arg)
+		else:
+			print 'ERROR: "%s" does not exist!' % (arg)
+	
+	if not dirs:
+		print 'ERROR: no valid directories provided on command line!'
+		sys.exit(1)
+	
+	# And off we go
+	c = Controller(options, dirs)
+	c.run_forever()
 
 # ---------------------------------------------------------------------------
 
