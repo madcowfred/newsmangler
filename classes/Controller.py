@@ -30,17 +30,27 @@
 
 """Controls stuff."""
 
+import asyncore
+import os
+import select
+
 from classes import yEnc
 
 # ---------------------------------------------------------------------------
 
 class Controller:
-	def __init__(self, options):
-		self._generate_nzbs = options.generate_nzbs
-		self._group = options.group
+	def __init__(self, conf):
+		self.conf = conf
+		print self.conf
+		
+		# Set up our poller
+		asyncore.poller = select.poll()
 	
 	def post(self, dirs):
 		for dirname in dirs:
-			print dirname
+			files = os.listdir(dirname)
+			postme = []
+			for filename in files:
+				filepath = os.path.join(dirname, filename)
 
 # ---------------------------------------------------------------------------

@@ -73,9 +73,26 @@ def main():
 		print 'ERROR: no valid directories provided on command line!'
 		sys.exit(1)
 	
+	# Parse our configuration file
+	configfile = os.path.expanduser('~/.newsmangler.conf')
+	if not os.path.isfile(configfile):
+		print 'ERROR: config file "%s" is missing!' % (configfile)
+		sys.exit(1)
+	
+	c = ConfigParser()
+	c.read(configfile)
+	conf = {}
+	for section in c.sections():
+		conf[section] = {}
+		for option in c.options(section):
+			v = c.get(section, option)
+			if v.isdigit():
+				v = int(v)
+			conf[section][option] = v
+	
 	# And off we go
-	c = Controller(options, dirs)
-	c.run_forever()
+	c = Controller(conf)
+	c.post(dirs)
 
 # ---------------------------------------------------------------------------
 
