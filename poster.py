@@ -36,7 +36,7 @@ import sys
 from ConfigParser import ConfigParser
 from optparse import OptionParser
 
-from classes.Controller import Controller
+from classes.Poster import Poster
 
 # ---------------------------------------------------------------------------
 
@@ -46,12 +46,6 @@ def main():
 	parser.add_option('-g', '--group',
 		dest='group',
 		help='post to a different group than the default',
-	)
-	parser.add_option('-n', '--nzbs',
-		action='store_true',
-		dest='generate_nzbs',
-		default=False,
-		help='generate a .NZB file for each post',
 	)
 	
 	(options, args) = parser.parse_args()
@@ -90,8 +84,20 @@ def main():
 				v = int(v)
 			conf[section][option] = v
 	
+	# Make sure the group is ok
+	if options.group:
+		if '.' not in options.group:
+			newsgroup = conf['aliases'].get(options.group)
+			if not newsgroup:
+				print 'ERROR: group alias "%s" does not exist!' % (options.group)
+				sys.exit(1)
+		else:
+			newsgroup = options.group
+	else:
+		newsgroup = conf['posting']['default_group']
+	
 	# And off we go
-	c = Controller(conf)
+	c = Poster(conf, newsgroup)
 	c.post(dirs)
 
 # ---------------------------------------------------------------------------

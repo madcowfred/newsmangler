@@ -28,20 +28,24 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-"""Controls stuff."""
+"""Main class for posting stuff."""
 
 import asyncore
 import os
 import select
+import time
 from cStringIO import StringIO
 
 from classes import yEnc
 
+__version__ = 'moo'
+
 # ---------------------------------------------------------------------------
 
-class Controller:
-	def __init__(self, conf):
+class Poster:
+	def __init__(self, conf, newsgroup):
 		self.conf = conf
+		self.newsgroup = newsgroup
 		
 		self._articles = []
 		self._files = {}
@@ -50,7 +54,7 @@ class Controller:
 		asyncore.poller = select.poll()
 	
 	def post(self, dirs):
-		self.generate_part_list(dirs)
+		self.generate_article_list(dirs)
 	
 	# -----------------------------------------------------------------------
 	# Generate the list of articles we need to post
@@ -92,23 +96,41 @@ class Controller:
 				# Now make up our parts
 				for i in range(parts):
 					article = [filepath, subject, i+1]
-					self._articles.append(part)
+					self._articles.append(article)
 				
 				n += 1
 	
 	# -----------------------------------------------------------------------
 	# Build an article for posting.
-	def build_article(self):
-		(f, filepathfilesize) = self._files[0]
+	def build_article(self, postfile, article):
+		(filepath, subject, partnum) = article
+		
+		# Basic headers
+		line = 'From: %s\n' % (conf['posting']['from'])
+		postfile.write(line)
+		line = 'Newsgroups: %s\n' % (self.newsgroup)
+		postfile.write(line)
+		line = time.strftime('Date: %a, %d %b %Y %H:%M:%S UTC\n', time.gmtime())
+		postfile.write(line)
+		subj = subject % (partnum)
+		line = 'Subject: %s\n' % (subj)
+		postfile.write(line)
+		line = 'X-Newsposter: newsmangler %s - http://www.madcowdisease.org/mcd/newsmangler\n' % (__version__)
+		postfile.write(line)
+		#mid = '<%s@%s>' % (time.time(), )
+		#postfile.write('Message-ID: %s\n' % mid)
+		postfile.write('\n')
+		
+		#(f, filepathfilesize) = self._files[0]
 		#if f is None:
 		#	self._files[0][0] = f = open(
 		
 		#self._part += 1
-		data = f.read(self.conf['posting']['article_size'])
+		#data = f.read(self.conf['posting']['article_size'])
 		
 		# If we've just hit the end of the file, we can throw it away now
-		if (self._part * self.conf['posting']['article_size'] > filesize):
-			f.close()
-			self._files.pop(0)
+		#if (self._part * self.conf['posting']['article_size'] > filesize):
+		#	f.close()
+		#	self._files.pop(0)
 
 # ---------------------------------------------------------------------------
