@@ -35,6 +35,7 @@ import os
 import select
 import time
 from cStringIO import StringIO
+from zlib import crc32
 
 from classes import yEnc
 
@@ -55,6 +56,10 @@ class Poster:
 	
 	def post(self, dirs):
 		self.generate_article_list(dirs)
+		
+		for article in self._articles[:1]:
+			postfile = StringIO()
+			self.build_article(postfile, article)
 	
 	# -----------------------------------------------------------------------
 	# Generate the list of articles we need to post
@@ -87,15 +92,22 @@ class Poster:
 					parts = full + 1
 				else:
 					parts = full
-				
+			
 				# Build a subject
 				temp = '%%0%sd' % (len(str(len(files))))
 				filenum = temp % (n)
 				subject = '%s [%s/%d] - "%s" yEnc (%%s/%d)' % (dirname, filenum, len(files), filename, parts)
 				
 				# Now make up our parts
+				fileinfo = {
+					'filename': filename,
+					'filepath': filepath,
+					'filesize': filesize,
+					'parts': parts,
+				}
+				
 				for i in range(parts):
-					article = [filepath, subject, i+1]
+					article = [fileinfo, subject, i+1]
 					self._articles.append(article)
 				
 				n += 1
@@ -103,10 +115,19 @@ class Poster:
 	# -----------------------------------------------------------------------
 	# Build an article for posting.
 	def build_article(self, postfile, article):
-		(filepath, subject, partnum) = article
+		(fileinfo, subject, partnum) = article
+		
+		# Read the chunk of data from the file
+		f = self._files.get(fileinfo['filepath'], None)
+		if f is None:
+			self._files[fileinfo['filepath']] = f = open(fileinfo['filepath'], 'rb')
+		
+		begin = f.tell()
+		data = f.read(self.conf['posting']['article_size'])
+		end = f.tell()
 		
 		# Basic headers
-		line = 'From: %s\n' % (conf['posting']['from'])
+		line = 'From: %s\n' % (self.conf['posting']['from'])
 		postfile.write(line)
 		line = 'Newsgroups: %s\n' % (self.newsgroup)
 		postfile.write(line)
@@ -121,16 +142,26 @@ class Poster:
 		#postfile.write('Message-ID: %s\n' % mid)
 		postfile.write('\n')
 		
-		#(f, filepathfilesize) = self._files[0]
-		#if f is None:
-		#	self._files[0][0] = f = open(
+		# yEnc start
+		line = '=ybegin part=%d total=%d line=256 size=%d name=%s\n' % (
+			partnum, fileinfo['parts'], fileinfo['filesize'], fileinfo['filename']
+		)
+		postfile.write(line)
+		line = '=ypart begin=%d end=%d\n' % (begin, end)
+		postfile.write(line)
 		
-		#self._part += 1
-		#data = f.read(self.conf['posting']['article_size'])
+		# yEnc data
+		yEnc.yEncode(postfile, data)
 		
-		# If we've just hit the end of the file, we can throw it away now
-		#if (self._part * self.conf['posting']['article_size'] > filesize):
-		#	f.close()
-		#	self._files.pop(0)
+		# yEnc end
+		partcrc = '%08x' % (crc32(data) & 2**32L - 1)
+		line = '=yend size=%d part=%d pcrc32=%s\n' % (end-begin, partnum, partcrc)
+		postfile.write(line)
+		
+		# And done
+		postfile.write('.\n')
+		
+		postfile.seek(0, 0)
+		print postfile.read()
 
 # ---------------------------------------------------------------------------
