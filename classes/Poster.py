@@ -126,6 +126,11 @@ class Poster:
 		data = f.read(self.conf['posting']['article_size'])
 		end = f.tell()
 		
+		# If that was the last part, close the file and throw it away
+		if partnum == fileinfo['parts']:
+			self._files[fileinfo['filepath']].close()
+			del self._files[fileinfo['filepath']]
+		
 		# Basic headers
 		line = 'From: %s\n' % (self.conf['posting']['from'])
 		postfile.write(line)
