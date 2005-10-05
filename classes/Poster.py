@@ -313,6 +313,6 @@ class Poster:
 		nzbfile.write('</nzb>\n')
 		nzbfile.close()
 		
-		self.logging.info('Generated %s', filename)
+		self.logger.info('Generated %s', filename)
 
 # ---------------------------------------------------------------------------
