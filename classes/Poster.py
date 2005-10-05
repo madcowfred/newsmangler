@@ -34,14 +34,16 @@ import asyncore
 import logging
 import os
 import select
+import sys
 import time
+
 from cStringIO import StringIO
 from zlib import crc32
 
 from classes import asyncNNTP
 from classes import yEnc
 
-__version__ = 'moo'
+__version__ = '0.00'
 
 # ---------------------------------------------------------------------------
 
