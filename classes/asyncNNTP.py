@@ -259,16 +259,3 @@ class asyncNNTP(asyncore.dispatcher):
 		self.send(data)
 
 # ---------------------------------------------------------------------------
-
-if __name__ == '__main__':
-	asyncore.poller = select.poll()
-	a = asyncNNTP('news.adelaide.pipenetworks.com', 119, None, None, None)
-	while 1:
-		results = asyncore.poller.poll()
-		for fd, event in results:
-			if event & select.POLLIN:
-				asyncore.read(a)
-			elif event & select.POLLOUT:
-				asyncore.write(a)
-		
-		time.sleep(0.1)
