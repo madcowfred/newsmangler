@@ -20,7 +20,8 @@ MODE_POST_DATA = 3
 MODE_POST_DONE = 4
 MODE_DATA = 5
 
-POST_READ_SIZE = 65536
+POST_BUFFER_MIN = 16384
+POST_READ_SIZE = 262144
 
 # ---------------------------------------------------------------------------
 
@@ -65,6 +66,17 @@ class asyncNNTP(asyncore.dispatcher):
 		else:
 			self.state = STATE_CONNECTING
 			self.logger.info('%d: connecting to %s:%s', self.connid, self.host, self.port)
+			
+			# Try to set our send buffer a bit larger
+			for i in range(17, 13, -1):
+				try:
+					self.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 2**i)
+				except socket.error:
+					continue
+				else:
+					break
+			self.logger.info('%d: SO_SNDBUF is %s', self.connid,
+				self.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF))
 	
 	def add_channel(self):
 		asyncore.socket_map[self._fileno] = self
@@ -103,14 +115,13 @@ class asyncNNTP(asyncore.dispatcher):
 			return
 		
 		sent = asyncore.dispatcher.send(self, self._writebuf)
-		#self.logger.info('%d: >> %r', self.connid, self._writebuf[:sent])
 		
 		self._writebuf = self._writebuf[sent:]
-		
 		self.parent._bytes += sent
 		
-		# If we're posting, we probably need to send some more data
-		if len(self._writebuf) == 0 and self.mode == MODE_POST_DATA:
+		# If we're posting, we might need to read some more data
+		if len(self._writebuf) <= POST_BUFFER_MIN and self.mode == MODE_POST_DATA:
+			print len(self._writebuf)
 			self.post_data()
 	
 	# We want buffered output, duh
