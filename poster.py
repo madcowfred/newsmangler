@@ -47,6 +47,12 @@ def main():
 		dest='group',
 		help='post to a different group than the default',
 	)
+	parser.add_option('-p', '--profile',
+		dest='profile',
+		action='store_true',
+		default=False,
+		help='run with the hotshot profiler',
+	)
 	
 	(options, args) = parser.parse_args()
 	
@@ -98,7 +104,21 @@ def main():
 	
 	# And off we go
 	c = Poster(conf, newsgroup)
-	c.post(dirs)
+	
+	if options.profile:
+		import hotshot
+		prof = hotshot.Profile('profile.poster')
+		prof.runcall(c.post, dirs)
+		prof.close()
+		
+		import hotshot.stats
+		stats = hotshot.stats.load('profile.poster')
+		stats.strip_dirs()
+		stats.sort_stats('time', 'calls')
+		stats.print_stats(25)
+	
+	else:
+		c.post(dirs)
 
 # ---------------------------------------------------------------------------
 
