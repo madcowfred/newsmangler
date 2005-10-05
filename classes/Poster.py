@@ -63,6 +63,7 @@ class Poster:
 		self._articles = []
 		self._conns = []
 		self._files = {}
+		self._idle = []
 		
 		# Set up our poller
 		asyncore.poller = select.poll()
@@ -81,7 +82,7 @@ class Poster:
 		
 		# And loop
 		self._bytes = 0
-		start = time.time()
+		last_reconnect = start = time.time()
 		
 		_sleep = time.sleep
 		_time = time.time
@@ -102,17 +103,16 @@ class Poster:
 				elif event & select.POLLNVAL:
 					print "FD %d is still in the poll, but it's closed!" % (fd)
 			
-			# Do some stuff
-			idle = []
-			for conn in self._conns:
-				if conn.state == asyncNNTP.STATE_DISCONNECTED and now >= conn.reconnect_at:
-					conn.do_connect()
-				elif conn.mode == asyncNNTP.MODE_COMMAND:
-					idle.append(conn)
+			# Only check reconnects once a second
+			if now - last_reconnect >= 1:
+				last_reconnect = now
+				for conn in self._conns:
+					if conn.state == asyncNNTP.STATE_DISCONNECTED and now >= conn.reconnect_at:
+						conn.do_connect()
 			
 			# Possibly post some more parts now
-			while idle and self._articles:
-				conn = idle.pop(0)
+			while self._idle and self._articles:
+				conn = self._idle.pop(0)
 				article = self._articles.pop(0)
 				postfile = StringIO()
 				self.build_article(postfile, article)
@@ -120,13 +120,13 @@ class Poster:
 				conn.post_article(postfile)
 			
 			# All done?
-			if self._articles == [] and len(idle) == self.conf['server']['connections']:
+			if self._articles == [] and len(self._idle) == self.conf['server']['connections']:
 				interval = time.time() - start
 				speed = self._bytes / interval / 1024
 				self.logger.info('Posting complete - %d bytes in %.2fs (%.2fKB/s)',
 					self._bytes, interval, speed)
 				
-				sys.exit(0)
+				return
 			
 			_sleep(0.02)
 		

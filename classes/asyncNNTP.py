@@ -172,6 +172,7 @@ class asyncNNTP(asyncore.dispatcher):
 						self.send(text)
 					else:
 						self.mode = MODE_COMMAND
+						self.parent._idle.append(self)
 						self.logger.info('%d: ready.', self.connid)
 				
 				# Need password too
@@ -185,6 +186,7 @@ class asyncNNTP(asyncore.dispatcher):
 				# Auth ok
 				elif resp in ('281'):
 					self.mode = MODE_COMMAND
+					self.parent._idle.append(self)
 					self.logger.info('%d: ready.', self.connid)
 				
 				# Auth failure
@@ -208,6 +210,7 @@ class asyncNNTP(asyncore.dispatcher):
 				# Not ok
 				elif resp == '440':
 					self.mode = MODE_COMMAND
+					self.parent._idle.append(self)
 					del self._postfile
 					self.logger.warning('%d: posting not allowed!', self.connid)
 			
@@ -217,9 +220,11 @@ class asyncNNTP(asyncore.dispatcher):
 				# Ok
 				if resp == '240':
 					self.mode = MODE_COMMAND
+					self.parent._idle.append(self)
 					self.logger.info('%d: posting complete.', self.connid)
 				elif resp.startswith('44'):
 					self.mode = MODE_COMMAND
+					self.parent._idle.append(self)
 					self.logger.info('%d: posting failed - %s', self.connid, line)
 			
 			# Other stuff
