@@ -75,7 +75,7 @@ class asyncNNTP(asyncore.dispatcher):
 					continue
 				else:
 					break
-			self.logger.info('%d: SO_SNDBUF is %s', self.connid,
+			self.logger.debug('%d: SO_SNDBUF is %s', self.connid,
 				self.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF))
 	
 	def add_channel(self):
@@ -106,7 +106,7 @@ class asyncNNTP(asyncore.dispatcher):
 	
 	# Send some data from our buffer when we can write
 	def handle_write(self):
-		#self.logger.info('%d wants to write!', self._fileno)
+		#self.logger.debug('%d wants to write!', self._fileno)
 		
 		if not self.writable():
 			# We don't have any buffer, silly thing
@@ -128,7 +128,7 @@ class asyncNNTP(asyncore.dispatcher):
 		self._writebuf += data
 		# We need to know about writable things now
 		asyncore.poller.register(self._fileno)
-		#self.logger.info('%d has data!', self._fileno)
+		#self.logger.debug('%d has data!', self._fileno)
 	
 	# -----------------------------------------------------------------------
 	
@@ -214,7 +214,7 @@ class asyncNNTP(asyncore.dispatcher):
 				# Ok
 				if resp == '340':
 					self.mode = MODE_POST_DATA
-					self.logger.info('%d: posting article.', self.connid)
+					self.logger.debug('%d: posting article.', self.connid)
 					
 					self.post_data()
 				# Not ok
@@ -231,11 +231,11 @@ class asyncNNTP(asyncore.dispatcher):
 				if resp == '240':
 					self.mode = MODE_COMMAND
 					self.parent._idle.append(self)
-					self.logger.info('%d: posting complete.', self.connid)
+					self.logger.debug('%d: posting complete.', self.connid)
 				elif resp.startswith('44'):
 					self.mode = MODE_COMMAND
 					self.parent._idle.append(self)
-					self.logger.info('%d: posting failed - %s', self.connid, line)
+					self.logger.warning('%d: posting failed - %s', self.connid, line)
 			
 			# Other stuff
 			else:
