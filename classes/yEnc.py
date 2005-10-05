@@ -72,12 +72,21 @@ def yEncode(postfile, data, linelen=128):
 		end = min(datalen, start + linelen)
 		# escaped char on the end of the line
 		if translated[end-1:end] == '=':
-			end -= 1
+			end += 1
+		
+		line = translated[start:end]
+		
 		# dot at the start of the line
-		if translated[end-1] == '.':
-			postfile.write('.' + translated[start:end])
-		else:
-			postfile.write(translated[start:end])
+		if line[0] == '.':
+			line = '.%s' % (line)
+		# escape tab/space at the start of a line
+		if line[0] in ('\x09', '\x20'):
+			line = '=%c%s' % (ord(line[0]) + 64, line[1:])
+		# escape tab/space at the end of a line
+		if line[-1] in ('\x09', '\x20'):
+			line = '%s=%c' % (line[:-1], ord(line[-1]) + 64)
+		
+		postfile.write(line)
 		postfile.write('\r\n')
 		start = end
 
