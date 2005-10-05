@@ -34,13 +34,22 @@ class asyncNNTP(asyncore.dispatcher):
 		self.password = password
 		
 		self.reset()
+	
+	def reset(self):
+		self._readbuf = ''
+		self._writebuf = ''
 		
+		self.reconnect_at = 0
+		self.mode = MODE_AUTH
+		self.state = STATE_DISCONNECTED
+	
+	def do_connect(self):
 		# Create the socket
 		self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
 		
 		# If we have to bind our socket to an IP, do that
-		if self.bindto is not None:
-			self.bind((self.bindto, 0))
+		#if self.bindto is not None:
+		#	self.bind((self.bindto, 0))
 		
 		# Try to connect. This can blow up!
 		try:
@@ -50,14 +59,6 @@ class asyncNNTP(asyncore.dispatcher):
 		else:
 			self.state = STATE_CONNECTING
 			self.logger.info('%d: connecting to %s:%s', self.connid, self.host, self.port)
-	
-	def reset(self):
-		self._readbuf = ''
-		self._writebuf = ''
-		
-		self.reconnect_at = 0
-		self.mode = MODE_AUTH
-		self.state = STATE_DISCONNECTED
 	
 	def add_channel(self):
 		asyncore.socket_map[self._fileno] = self

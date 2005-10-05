@@ -74,9 +74,16 @@ class Poster:
 				self.conf['server']['hostname'], self.conf['server']['port'], None,
 				self.conf['server']['username'], self.conf['server']['password']
 			)
+			conn.do_connect()
 			self._conns.append(conn)
 		
+		# And loop
+		_sleep = time.sleep
+		_time = time.time
+		
 		while 1:
+			now = _time()
+			
 			results = asyncore.poller.poll(0)
 			for fd, event in results:
 				obj = asyncore.socket_map.get(fd)
@@ -89,6 +96,13 @@ class Poster:
 					asyncore.write(obj)
 				elif event & select.POLLNVAL:
 					print "FD %d is still in the poll, but it's closed!" % (fd)
+			
+			# Check if any need to reconnect yet
+			for conn in self._conns:
+				if conn.state == asyncNNTP.STATE_DISCONNECTED and now >= conn.reconnect_at:
+					conn.do_connect()
+			
+			_sleep(0.02)
 		
 		for article in self._articles[:1]:
 			postfile = StringIO()
