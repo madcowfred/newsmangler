@@ -31,12 +31,14 @@
 """Main class for posting stuff."""
 
 import asyncore
+import logging
 import os
 import select
 import time
 from cStringIO import StringIO
 from zlib import crc32
 
+from classes import asyncNNTP
 from classes import yEnc
 
 __version__ = 'moo'
@@ -48,7 +50,16 @@ class Poster:
 		self.conf = conf
 		self.newsgroup = newsgroup
 		
+		# Set up our logger
+		self.logger = logging.getLogger('mangler')
+		handler = logging.StreamHandler()
+		formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+		handler.setFormatter(formatter)
+		self.logger.addHandler(handler)
+		self.logger.setLevel(logging.INFO)
+		
 		self._articles = []
+		self._conns = []
 		self._files = {}
 		
 		# Set up our poller
@@ -56,6 +67,28 @@ class Poster:
 	
 	def post(self, dirs):
 		self.generate_article_list(dirs)
+		
+		# connect!
+		for i in range(self.conf['server']['connections']):
+			conn = asyncNNTP.asyncNNTP(self, i,
+				self.conf['server']['hostname'], self.conf['server']['port'], None,
+				self.conf['server']['username'], self.conf['server']['password']
+			)
+			self._conns.append(conn)
+		
+		while 1:
+			results = asyncore.poller.poll(0)
+			for fd, event in results:
+				obj = asyncore.socket_map.get(fd)
+				if obj is None:
+					print 'Invalid FD for poll()? %d' % (fd)
+				
+				if event & select.POLLIN:
+					asyncore.read(obj)
+				elif event & select.POLLOUT:
+					asyncore.write(obj)
+				elif event & select.POLLNVAL:
+					print "FD %d is still in the poll, but it's closed!" % (fd)
 		
 		for article in self._articles[:1]:
 			postfile = StringIO()
@@ -92,7 +125,7 @@ class Poster:
 					parts = full + 1
 				else:
 					parts = full
-			
+				
 				# Build a subject
 				temp = '%%0%sd' % (len(str(len(files))))
 				filenum = temp % (n)

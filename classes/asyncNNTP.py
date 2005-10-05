@@ -1,6 +1,8 @@
 "A basic NNTP client based on asyncore_buffered from blamehangle."
 
 import asyncore
+import errno
+import logging
 import select
 import socket
 import time
@@ -18,9 +20,13 @@ MODE_DATA = 2
 # ---------------------------------------------------------------------------
 
 class asyncNNTP(asyncore.dispatcher):
-	def __init__(self, host, port, bindto, username, password):
+	def __init__(self, parent, connid, host, port, bindto, username, password):
 		asyncore.dispatcher.__init__(self)
 		
+		self.logger = logging.getLogger('mangler')
+		
+		self.parent = parent
+		self.connid = connid
 		self.host = host
 		self.port = port
 		self.bindto = bindto
@@ -43,12 +49,13 @@ class asyncNNTP(asyncore.dispatcher):
 			self.really_close(msg)
 		else:
 			self.state = STATE_CONNECTING
+			self.logger.info('%d: connecting to %s:%s', self.connid, self.host, self.port)
 	
 	def reset(self):
 		self._readbuf = ''
 		self._writebuf = ''
 		
-		self.connect_retry = 0
+		self.reconnect_at = 0
 		self.mode = MODE_AUTH
 		self.state = STATE_DISCONNECTED
 	
@@ -80,7 +87,7 @@ class asyncNNTP(asyncore.dispatcher):
 	
 	# Send some data from our buffer when we can write
 	def handle_write(self):
-		#print '%d wants to write!' % self._fileno
+		self.logger.info('%d wants to write!', self._fileno)
 		
 		if not self.writable():
 			# We don't have any buffer, silly thing
@@ -96,12 +103,18 @@ class asyncNNTP(asyncore.dispatcher):
 		self._writebuf += data
 		# We need to know about writable things now
 		asyncore.poller.register(self._fileno)
-		#print '%d has data!' % self._fileno
+		#self.logger.info('%d has data!', self._fileno)
+	
+	# -----------------------------------------------------------------------
+	
+	def handle_error(self):
+		self.logger.error('%d: unhandled exception!', self.connid, exc_info=True)
 	
 	# -----------------------------------------------------------------------
 	
 	def handle_connect(self):
 		self.status = STATE_CONNECTED
+		self.logger.info('%d: connected!', self.connid)
 	
 	def handle_close(self):
 		self.really_close()
@@ -113,7 +126,11 @@ class asyncNNTP(asyncore.dispatcher):
 		self.close()
 		self.reset()
 		
-		print 'BONG! %s' % (error)
+		if error and hasattr(error, 'args'):
+			self.logger.warning('%d: %s!', self.connid, error.args[1])
+			self.reconnect_at = time.time() + self.parent.conf['server']['reconnect_delay']
+		else:
+			self.logger.warning('Connection closed: %s', error)
 	
 	# There is some data waiting to be read
 	def handle_read(self):
