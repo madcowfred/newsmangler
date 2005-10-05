@@ -311,7 +311,8 @@ class Poster:
 		nzbfile.write(line)
 		
 		nzbfile.write('</nzb>\n')
+		nzbfile.close()
 		
-		print self._msgids
+		self.logging.info('Generated %s', filename)
 
 # ---------------------------------------------------------------------------
