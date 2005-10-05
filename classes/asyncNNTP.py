@@ -121,7 +121,6 @@ class asyncNNTP(asyncore.dispatcher):
 		
 		# If we're posting, we might need to read some more data
 		if len(self._writebuf) <= POST_BUFFER_MIN and self.mode == MODE_POST_DATA:
-			print len(self._writebuf)
 			self.post_data()
 	
 	# We want buffered output, duh
