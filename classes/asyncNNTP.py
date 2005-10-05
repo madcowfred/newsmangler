@@ -15,7 +15,12 @@ STATE_CONNECTED = 2
 
 MODE_AUTH = 0
 MODE_COMMAND = 1
-MODE_DATA = 2
+MODE_POST_INIT = 2
+MODE_POST_DATA = 3
+MODE_POST_DONE = 4
+MODE_DATA = 5
+
+POST_READ_SIZE = 65536
 
 # ---------------------------------------------------------------------------
 
@@ -38,6 +43,7 @@ class asyncNNTP(asyncore.dispatcher):
 	def reset(self):
 		self._readbuf = ''
 		self._writebuf = ''
+		self._postfile = None
 		
 		self.reconnect_at = 0
 		self.mode = MODE_AUTH
@@ -88,7 +94,7 @@ class asyncNNTP(asyncore.dispatcher):
 	
 	# Send some data from our buffer when we can write
 	def handle_write(self):
-		self.logger.info('%d wants to write!', self._fileno)
+		#self.logger.info('%d wants to write!', self._fileno)
 		
 		if not self.writable():
 			# We don't have any buffer, silly thing
@@ -97,7 +103,15 @@ class asyncNNTP(asyncore.dispatcher):
 			return
 		
 		sent = asyncore.dispatcher.send(self, self._writebuf)
+		#self.logger.info('%d: >> %r', self.connid, self._writebuf[:sent])
+		
 		self._writebuf = self._writebuf[sent:]
+		
+		self.parent._bytes += sent
+		
+		# If we're posting, we probably need to send some more data
+		if len(self._writebuf) == 0 and self.mode == MODE_POST_DATA:
+			self.post_data()
 	
 	# We want buffered output, duh
 	def send(self, data):
@@ -147,8 +161,6 @@ class asyncNNTP(asyncore.dispatcher):
 		
 		# Do something useful here
 		for line in lines:
-			print '>', line.strip()
-			
 			# Initial login stuff
 			if self.mode == MODE_AUTH:
 				resp = line.split(None, 1)[0]
@@ -160,6 +172,7 @@ class asyncNNTP(asyncore.dispatcher):
 						self.send(text)
 					else:
 						self.mode = MODE_COMMAND
+						self.logger.info('%d: ready.', self.connid)
 				
 				# Need password too
 				elif resp in ('381'):
@@ -170,12 +183,65 @@ class asyncNNTP(asyncore.dispatcher):
 						self.really_close('need password!')
 				
 				# Auth ok
-				if resp in ('281'):
+				elif resp in ('281'):
 					self.mode = MODE_COMMAND
+					self.logger.info('%d: ready.', self.connid)
 				
 				# Auth failure
 				elif resp in ('502'):
 					self.really_close('authentication failure.')
+				
+				# Dunno
+				else:
+					self.logger.warning('%d: unknown response from server - "%s"',
+						self.connid, line)
+			
+			# Posting a file
+			elif self.mode == MODE_POST_INIT:
+				resp = line.split(None, 1)[0]
+				# Ok
+				if resp == '340':
+					self.mode = MODE_POST_DATA
+					self.logger.info('%d: posting article.', self.connid)
+					
+					self.post_data()
+				# Not ok
+				elif resp == '440':
+					self.mode = MODE_COMMAND
+					del self._postfile
+					self.logger.warning('%d: posting not allowed!', self.connid)
+			
+			# Done posting
+			elif self.mode == MODE_POST_DONE:
+				resp = line.split(None, 1)[0]
+				# Ok
+				if resp == '240':
+					self.mode = MODE_COMMAND
+					self.logger.info('%d: posting complete.', self.connid)
+				elif resp.startswith('44'):
+					self.mode = MODE_COMMAND
+					self.logger.info('%d: posting failed - %s', self.connid, line)
+			
+			# Other stuff
+			else:
+				self.logger.warning('%d: unknown response from server - "%s"',
+					self.connid, line)
+	
+	# -----------------------------------------------------------------------
+	# Guess what this does!
+	def post_article(self, postfile):
+		self.mode = MODE_POST_INIT
+		self._postfile = postfile
+		self.send('POST\n')
+	
+	def post_data(self):
+		data = self._postfile.read(POST_READ_SIZE)
+		if len(data) == 0:
+			self.mode = MODE_POST_DONE
+			self._postfile.close()
+			self._postfile = None
+		
+		self.send(data)
 
 # ---------------------------------------------------------------------------
 

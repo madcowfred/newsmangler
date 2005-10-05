@@ -78,6 +78,9 @@ class Poster:
 			self._conns.append(conn)
 		
 		# And loop
+		self._bytes = 0
+		start = time.time()
+		
 		_sleep = time.sleep
 		_time = time.time
 		
@@ -97,10 +100,31 @@ class Poster:
 				elif event & select.POLLNVAL:
 					print "FD %d is still in the poll, but it's closed!" % (fd)
 			
-			# Check if any need to reconnect yet
+			# Do some stuff
+			idle = []
 			for conn in self._conns:
 				if conn.state == asyncNNTP.STATE_DISCONNECTED and now >= conn.reconnect_at:
 					conn.do_connect()
+				elif conn.mode == asyncNNTP.MODE_COMMAND:
+					idle.append(conn)
+			
+			# Possibly post some more parts now
+			while idle and self._articles:
+				conn = idle.pop(0)
+				article = self._articles.pop(0)
+				postfile = StringIO()
+				self.build_article(postfile, article)
+				
+				conn.post_article(postfile)
+			
+			# All done?
+			if self._articles == [] and len(idle) == self.conf['server']['connections']:
+				interval = time.time() - start
+				speed = self._bytes / interval / 1024
+				self.logger.info('Posting complete - %d bytes in %.2fs (%.2fKB/s)',
+					self._bytes, interval, speed)
+				
+				sys.exit(0)
 			
 			_sleep(0.02)
 		
@@ -143,7 +167,9 @@ class Poster:
 				# Build a subject
 				temp = '%%0%sd' % (len(str(len(files))))
 				filenum = temp % (n)
-				subject = '%s [%s/%d] - "%s" yEnc (%%s/%d)' % (dirname, filenum, len(files), filename, parts)
+				subject = '%s [%s/%d] - "%s" yEnc (%%s/%d)' % (
+					dirname, filenum, len(files), filename, parts
+				)
 				
 				# Now make up our parts
 				fileinfo = {
@@ -179,27 +205,27 @@ class Poster:
 			del self._files[fileinfo['filepath']]
 		
 		# Basic headers
-		line = 'From: %s\n' % (self.conf['posting']['from'])
+		line = 'From: %s\r\n' % (self.conf['posting']['from'])
 		postfile.write(line)
-		line = 'Newsgroups: %s\n' % (self.newsgroup)
+		line = 'Newsgroups: %s\r\n' % (self.newsgroup)
 		postfile.write(line)
-		line = time.strftime('Date: %a, %d %b %Y %H:%M:%S UTC\n', time.gmtime())
+		line = time.strftime('Date: %a, %d %b %Y %H:%M:%S UTC\r\n', time.gmtime())
 		postfile.write(line)
 		subj = subject % (partnum)
-		line = 'Subject: %s\n' % (subj)
+		line = 'Subject: %s\r\n' % (subj)
 		postfile.write(line)
-		line = 'X-Newsposter: newsmangler %s - http://www.madcowdisease.org/mcd/newsmangler\n' % (__version__)
+		line = 'X-Newsposter: newsmangler %s - http://www.madcowdisease.org/mcd/newsmangler\r\n' % (__version__)
 		postfile.write(line)
 		#mid = '<%s@%s>' % (time.time(), )
-		#postfile.write('Message-ID: %s\n' % mid)
-		postfile.write('\n')
+		#postfile.write('Message-ID: %s\r\n' % mid)
+		postfile.write('\r\n')
 		
 		# yEnc start
-		line = '=ybegin part=%d total=%d line=256 size=%d name=%s\n' % (
+		line = '=ybegin part=%d total=%d line=256 size=%d name=%s\r\n' % (
 			partnum, fileinfo['parts'], fileinfo['filesize'], fileinfo['filename']
 		)
 		postfile.write(line)
-		line = '=ypart begin=%d end=%d\n' % (begin, end)
+		line = '=ypart begin=%d end=%d\r\n' % (begin, end)
 		postfile.write(line)
 		
 		# yEnc data
@@ -207,13 +233,13 @@ class Poster:
 		
 		# yEnc end
 		partcrc = '%08x' % (crc32(data) & 2**32L - 1)
-		line = '=yend size=%d part=%d pcrc32=%s\n' % (end-begin, partnum, partcrc)
+		line = '=yend size=%d part=%d pcrc32=%s\r\n' % (end-begin, partnum, partcrc)
 		postfile.write(line)
 		
 		# And done
-		postfile.write('.\n')
+		postfile.write('.\r\n')
 		
 		postfile.seek(0, 0)
-		print postfile.read()
+		#print postfile.read()
 
 # ---------------------------------------------------------------------------

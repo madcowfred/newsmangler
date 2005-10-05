@@ -52,7 +52,7 @@ def yDecode(data):
 	
 	return data.translate(YDEC_TRANS)
 
-def yEncode(postfile, data, linelen=256):
+def yEncode(postfile, data, linelen=128):
 	'Encode data into yEnc format'
 	
 	translated = data.translate(YENC_TRANS)
@@ -78,7 +78,7 @@ def yEncode(postfile, data, linelen=256):
 			postfile.write('.' + translated[start:end])
 		else:
 			postfile.write(translated[start:end])
-		postfile.write('\n')
+		postfile.write('\r\n')
 		start = end
 
 # ---------------------------------------------------------------------------
