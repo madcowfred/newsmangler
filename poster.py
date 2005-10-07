@@ -36,6 +36,7 @@ import sys
 from ConfigParser import ConfigParser
 from optparse import OptionParser
 
+from classes.Common import ParseConfig
 from classes.Poster import Poster
 
 # ---------------------------------------------------------------------------
@@ -74,21 +75,7 @@ def main():
 		sys.exit(1)
 	
 	# Parse our configuration file
-	configfile = os.path.expanduser('~/.newsmangler.conf')
-	if not os.path.isfile(configfile):
-		print 'ERROR: config file "%s" is missing!' % (configfile)
-		sys.exit(1)
-	
-	c = ConfigParser()
-	c.read(configfile)
-	conf = {}
-	for section in c.sections():
-		conf[section] = {}
-		for option in c.options(section):
-			v = c.get(section, option)
-			if v.isdigit():
-				v = int(v)
-			conf[section][option] = v
+	conf = ParseConfig()
 	
 	# Make sure the group is ok
 	if options.group:

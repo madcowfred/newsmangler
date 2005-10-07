@@ -33,6 +33,27 @@
 import os
 
 # ---------------------------------------------------------------------------
+# Parse our configuration file
+def ParseConfig():
+	configfile = os.path.expanduser('~/.newsmangler.conf')
+	if not os.path.isfile(configfile):
+		print 'ERROR: config file "%s" is missing!' % (configfile)
+		sys.exit(1)
+	
+	c = ConfigParser()
+	c.read(configfile)
+	conf = {}
+	for section in c.sections():
+		conf[section] = {}
+		for option in c.options(section):
+			v = c.get(section, option)
+			if v.isdigit():
+				v = int(v)
+			conf[section][option] = v
+	
+	return conf
+
+# ---------------------------------------------------------------------------
 # Come up with a 'safe' filename
 def SafeFilename(filename):
 	safe_filename = os.path.basename(filename)
