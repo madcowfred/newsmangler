@@ -90,12 +90,12 @@ def main():
 		newsgroup = conf['posting']['default_group']
 	
 	# And off we go
-	c = Poster(conf, newsgroup)
+	poster = Poster(conf, newsgroup)
 	
 	if options.profile:
 		import hotshot
 		prof = hotshot.Profile('profile.poster')
-		prof.runcall(c.post, dirs)
+		prof.runcall(poster.post, dirs)
 		prof.close()
 		
 		import hotshot.stats
@@ -105,7 +105,7 @@ def main():
 		stats.print_stats(25)
 	
 	else:
-		c.post(dirs)
+		poster.post(dirs)
 
 # ---------------------------------------------------------------------------
 
