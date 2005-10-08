@@ -38,13 +38,10 @@ import sys
 import time
 
 from cStringIO import StringIO
-from zlib import crc32
 
 from classes import asyncNNTP
 from classes import yEnc
 from classes.Common import *
-
-__version__ = '0.00'
 
 # ---------------------------------------------------------------------------
 
@@ -250,7 +247,7 @@ class Poster:
 		yEnc.yEncode(postfile, data)
 		
 		# yEnc end
-		partcrc = '%08x' % (crc32(data) & 2**32L - 1)
+		partcrc = CRC32(data)
 		line = '=yend size=%d part=%d pcrc32=%s\r\n' % (end-begin, partnum, partcrc)
 		postfile.write(line)
 		

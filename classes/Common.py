@@ -30,7 +30,10 @@
 
 """Various miscellaneous useful functions."""
 
+__version__ = '0.01'
+
 import os
+import zlib
 
 # ---------------------------------------------------------------------------
 # Parse our configuration file
@@ -54,6 +57,10 @@ def ParseConfig():
 	return conf
 
 # ---------------------------------------------------------------------------
+# Make a human readable CRC32 value
+def CRC32(data):
+	return '%08x' % (zlib.crc32(data) & 2**32L - 1)
+
 # Come up with a 'safe' filename
 def SafeFilename(filename):
 	safe_filename = os.path.basename(filename)
