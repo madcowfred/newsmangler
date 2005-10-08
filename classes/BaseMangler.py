@@ -28,52 +28,65 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-"""Various miscellaneous useful functions."""
+"""Base class for leecher/mangler."""
 
-__version__ = '0.01'
-
-import logging
+import asyncore
 import os
-import zlib
+import select
+import sys
+import time
+
+from classes import asyncNNTP
 
 # ---------------------------------------------------------------------------
-# Parse our configuration file
-def ParseConfig():
-	configfile = os.path.expanduser('~/.newsmangler.conf')
-	if not os.path.isfile(configfile):
-		print 'ERROR: config file "%s" is missing!' % (configfile)
-		sys.exit(1)
+
+class BaseMangler:
+	def __init__(self, conf):
+		self.conf = conf
 	
-	c = ConfigParser()
-	c.read(configfile)
-	conf = {}
-	for section in c.sections():
-		conf[section] = {}
-		for option in c.options(section):
-			v = c.get(section, option)
-			if v.isdigit():
-				v = int(v)
-			conf[section][option] = v
+		self._conns = []
+		self._idle = []
+		
+		# Create our logger
+		self.logger = logging.getLogger('mangler')
+		handler = logging.StreamHandler()
+		formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+		handler.setFormatter(formatter)
+		self.logger.addHandler(handler)
+		self.logger.setLevel(logging.INFO)
+		
+		# Set up our poller
+		asyncore.poller = select.poll()
 	
-	return conf
+	# Connect to server
+	def connect(self):
+		for i in range(self.conf['server']['connections']):
+			conn = asyncNNTP.asyncNNTP(self, i,
+				self.conf['server']['hostname'], self.conf['server']['port'], None,
+				self.conf['server']['username'], self.conf['server']['password']
+			)
+			conn.do_connect()
+			self._conns.append(conn)
 
-# ---------------------------------------------------------------------------
-# Make a human readable CRC32 value
-def CRC32(data):
-	return '%08x' % (zlib.crc32(data) & 2**32L - 1)
-
-# Come up with a 'safe' filename
-def SafeFilename(filename):
-	safe_filename = os.path.basename(filename)
-	for char in [' ', "\\", '|', '/', ':', '*', '?', '<', '>']:
-		safe_filename = safe_filename.replace(char, '_')
-	return safe_filename
-
-# Escape things properly to work as XML entities
-def XMLBrackets(s):
-	s = s.replace('<', '&lt;')
-	s = s.replace('>', '&gt;')
-	s = s.replace('"', '&#34;')
-	return s
+	# Poll our poll() object and do whatever is neccessary. Basically a combination
+	# of asyncore.poll2() and asyncore.readwrite(), without all the frippery.
+	def poll(self):
+		results = asyncore.poller.poll(0)
+		for fd, flags in results:
+			obj = asyncore.socket_map.get(fd)
+			if obj is None:
+				self.logger.warning('Invalid FD for poll() - %d', fd)
+			
+			try:
+				if flags & (select.POLLIN | select.POLLPRI):
+					obj.handle_read_event()
+				if flags & select.POLLOUT:
+					obj.handle_write_event()
+				if flags & (select.POLLERR | select.POLLHUP | select.POLLNVAL):
+					obj.handle_expt_event()
+			except ExitNow:
+				raise
+			except:
+				obj.handle_error()
 
 # ---------------------------------------------------------------------------

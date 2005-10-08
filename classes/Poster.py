@@ -40,39 +40,30 @@ from cStringIO import StringIO
 
 from classes import asyncNNTP
 from classes import yEnc
+from classes.BaseMangler import BaseMangler
 from classes.Common import *
 
 # ---------------------------------------------------------------------------
 
-class Poster:
-	def __init__(self, conf, newsgroup):
-		self.conf = conf
-		self.newsgroup = newsgroup
-		
-		self.logger = CreateLogger()
+class Poster(BaseMangler):
+	def __init__(self, conf):
+		BaseMangler.__init__(self, conf)
 		
 		self._articles = []
-		self._conns = []
 		self._files = {}
-		self._idle = []
 		
 		self._current_dir = None
 		self._msgids = {}
-		
-		# Set up our poller
-		asyncore.poller = select.poll()
+		self.newsgroup = None
 	
-	def post(self, dirs):
+	def post(self, newsgroup, dirs):
+		self.newsgroup = newsgroup
+		
+		# Generate the list of articles we need to post
 		self.generate_article_list(dirs)
 		
 		# connect!
-		for i in range(self.conf['server']['connections']):
-			conn = asyncNNTP.asyncNNTP(self, i,
-				self.conf['server']['hostname'], self.conf['server']['port'], None,
-				self.conf['server']['username'], self.conf['server']['password']
-			)
-			conn.do_connect()
-			self._conns.append(conn)
+		self.connect()
 		
 		# And loop
 		self._bytes = 0
@@ -85,7 +76,7 @@ class Poster:
 			now = _time()
 			
 			# Poll our sockets for events
-			DoPoll(self.logger)
+			self.poll()
 			
 			# Possibly post some more parts now
 			while self._idle and self._articles:
