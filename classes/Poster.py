@@ -31,7 +31,6 @@
 """Main class for posting stuff."""
 
 import asyncore
-import logging
 import os
 import select
 import sys
@@ -51,12 +50,7 @@ class Poster:
 		self.newsgroup = newsgroup
 		
 		# Set up our logger
-		self.logger = logging.getLogger('mangler')
-		handler = logging.StreamHandler()
-		formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
-		handler.setFormatter(formatter)
-		self.logger.addHandler(handler)
-		self.logger.setLevel(logging.INFO)
+		self.logger = CreateLogger()
 		
 		self._articles = []
 		self._conns = []

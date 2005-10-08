@@ -32,6 +32,7 @@
 
 __version__ = '0.01'
 
+import logging
 import os
 import zlib
 
@@ -55,6 +56,16 @@ def ParseConfig():
 			conf[section][option] = v
 	
 	return conf
+
+# Create our logger
+def CreateLogger():
+	logger = logging.getLogger('mangler')
+	handler = logging.StreamHandler()
+	formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+	handler.setFormatter(formatter)
+	logger.addHandler(handler)
+	logger.setLevel(logging.INFO)
+	return logger
 
 # ---------------------------------------------------------------------------
 # Make a human readable CRC32 value
