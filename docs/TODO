@@ -1,1 +1,4 @@
-* Lots of stuff.
+* Actually write the leeching code.
+* Add a command line option to watch a directory for new .NZB files and
+  start leeching any that haven't been modified for 30s or so (don't want
+  partially downloaded).
