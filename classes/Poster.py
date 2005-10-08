@@ -49,7 +49,6 @@ class Poster:
 		self.conf = conf
 		self.newsgroup = newsgroup
 		
-		# Set up our logger
 		self.logger = CreateLogger()
 		
 		self._articles = []
@@ -86,18 +85,7 @@ class Poster:
 			now = _time()
 			
 			# Poll our sockets for events
-			results = asyncore.poller.poll(0)
-			for fd, event in results:
-				obj = asyncore.socket_map.get(fd)
-				if obj is None:
-					print 'Invalid FD for poll()? %d' % (fd)
-				
-				if event & select.POLLIN:
-					asyncore.read(obj)
-				elif event & select.POLLOUT:
-					asyncore.write(obj)
-				elif event & select.POLLNVAL:
-					print "FD %d is still in the poll, but it's closed!" % (fd)
+			DoPoll(self.logger)
 			
 			# Possibly post some more parts now
 			while self._idle and self._articles:

@@ -68,6 +68,28 @@ def CreateLogger():
 	return logger
 
 # ---------------------------------------------------------------------------
+# Poll our poll() object and do whatever is neccessary. Basically a combination
+# of asyncore.poll2() and asyncore.readwrite(), without all the frippery.
+def DoPoll(logger):
+	results = asyncore.poller.poll(0)
+	for fd, flags in results:
+		obj = asyncore.socket_map.get(fd)
+		if obj is None:
+			logger.warning('Invalid FD for poll() - %d', fd)
+		
+		try:
+			if flags & (select.POLLIN | select.POLLPRI):
+				obj.handle_read_event()
+			if flags & select.POLLOUT:
+				obj.handle_write_event()
+			if flags & (select.POLLERR | select.POLLHUP | select.POLLNVAL):
+				obj.handle_expt_event()
+		except ExitNow:
+			raise
+		except:
+			obj.handle_error()
+
+# ---------------------------------------------------------------------------
 # Make a human readable CRC32 value
 def CRC32(data):
 	return '%08x' % (zlib.crc32(data) & 2**32L - 1)
