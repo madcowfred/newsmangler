@@ -43,6 +43,8 @@ from classes import yEnc
 from classes.BaseMangler import BaseMangler
 from classes.Common import *
 
+__version__ = '0.01'
+
 # ---------------------------------------------------------------------------
 
 class Poster(BaseMangler):

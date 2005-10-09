@@ -31,6 +31,7 @@
 """Base class for leecher/mangler."""
 
 import asyncore
+import logging
 import os
 import select
 import sys

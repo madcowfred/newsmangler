@@ -32,9 +32,10 @@
 
 __version__ = '0.01'
 
-import logging
 import os
 import zlib
+
+from ConfigParser import ConfigParser
 
 # ---------------------------------------------------------------------------
 # Parse our configuration file
