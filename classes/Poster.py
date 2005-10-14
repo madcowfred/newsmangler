@@ -225,7 +225,7 @@ class Poster(BaseMangler):
 			partnum, fileinfo['parts'], fileinfo['filesize'], fileinfo['filename']
 		)
 		postfile.write(line)
-		line = '=ypart begin=%d end=%d\r\n' % (begin, end)
+		line = '=ypart begin=%d end=%d\r\n' % (begin+1, end)
 		postfile.write(line)
 		
 		# yEnc data
