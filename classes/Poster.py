@@ -51,6 +51,8 @@ class Poster(BaseMangler):
 	def __init__(self, conf):
 		BaseMangler.__init__(self, conf)
 		
+		self.conf['posting']['skip_filenames'] = self.conf['posting'].get('skip_filenames', '').split()
+		
 		self._articles = []
 		self._files = {}
 		
@@ -130,8 +132,13 @@ class Poster(BaseMangler):
 			for filename in f:
 				filepath = os.path.join(dirname, filename)
 				# Skip non-files and empty files
-				if os.path.isfile(filepath) and os.path.getsize(filepath):
-					files.append(filename)
+				if not os.path.isfile(filepath):
+					continue
+				if not os.path.getsize(filepath):
+					continue
+				if filename in self.conf['posting']['skip_filenames']:
+					continue
+				files.append(filename)
 			files.sort()
 			
 			n = 1
@@ -153,8 +160,8 @@ class Poster(BaseMangler):
 					os.path.basename(dirname), filenum, len(files), filename, temp, parts
 				)
 				
-				if conf['posting']['subject_prefix']:
-					subject = '%s %s' % (conf['posting']['subject_prefix'], subject)
+				if self.conf['posting']['subject_prefix']:
+					subject = '%s %s' % (self.conf['posting']['subject_prefix'], subject)
 				
 				# Now make up our parts
 				fileinfo = {
