@@ -153,6 +153,9 @@ class Poster(BaseMangler):
 					os.path.basename(dirname), filenum, len(files), filename, temp, parts
 				)
 				
+				if conf['posting']['subject_prefix']:
+					subject = '%s %s' % (conf['posting']['subject_prefix'], subject)
+				
 				# Now make up our parts
 				fileinfo = {
 					'dirname': dirname,
