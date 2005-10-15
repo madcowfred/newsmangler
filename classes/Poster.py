@@ -275,7 +275,7 @@ class Poster(BaseMangler):
 			nzbfile.write(line)
 			nzbfile.write('    <groups>\n')
 			
-			for newsgroup in self.newsgroup.split(',')
+			for newsgroup in self.newsgroup.split(','):
 				line = '      <group>%s</group>\n' % (newsgroup)
 				nzbfile.write(line)
 			
