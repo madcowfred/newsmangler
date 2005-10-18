@@ -54,6 +54,17 @@ class asyncNNTP(asyncore.dispatcher):
 		# Create the socket
 		self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
 		
+		# Try to set our send buffer a bit larger
+		for i in range(17, 13, -1):
+			try:
+				self.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 2**i)
+			except socket.error:
+				continue
+			else:
+				break
+		self.logger.debug('%d: SO_SNDBUF is %s', self.connid,
+			self.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF))
+		
 		# If we have to bind our socket to an IP, do that
 		#if self.bindto is not None:
 		#	self.bind((self.bindto, 0))
@@ -66,17 +77,6 @@ class asyncNNTP(asyncore.dispatcher):
 		else:
 			self.state = STATE_CONNECTING
 			self.logger.info('%d: connecting to %s:%s', self.connid, self.host, self.port)
-			
-			# Try to set our send buffer a bit larger
-			for i in range(17, 13, -1):
-				try:
-					self.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 2**i)
-				except socket.error:
-					continue
-				else:
-					break
-			self.logger.debug('%d: SO_SNDBUF is %s', self.connid,
-				self.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF))
 	
 	def add_channel(self):
 		asyncore.socket_map[self._fileno] = self
