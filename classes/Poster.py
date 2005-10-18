@@ -73,6 +73,7 @@ class Poster(BaseMangler):
 		self._bytes = 0
 		last_reconnect = start = time.time()
 		
+		_poll = self.poll
 		_sleep = time.sleep
 		_time = time.time
 		
@@ -80,7 +81,7 @@ class Poster(BaseMangler):
 			now = _time()
 			
 			# Poll our sockets for events
-			self.poll()
+			_poll()
 			
 			# Possibly post some more parts now
 			while self._idle and self._articles:
@@ -204,8 +205,8 @@ class Poster(BaseMangler):
 		line = 'Newsgroups: %s\r\n' % (self.newsgroup)
 		postfile.write(line)
 		
-		line = time.strftime('Date: %a, %d %b %Y %H:%M:%S UTC\r\n', time.gmtime())
-		postfile.write(line)
+		#line = time.strftime('Date: %a, %d %b %Y %H:%M:%S GMT\r\n', time.gmtime())
+		#postfile.write(line)
 		
 		subj = subject % (partnum)
 		line = 'Subject: %s\r\n' % (subj)
