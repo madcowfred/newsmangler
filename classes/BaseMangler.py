@@ -85,7 +85,7 @@ class BaseMangler:
 					obj.handle_write_event()
 				if flags & (select.POLLERR | select.POLLHUP | select.POLLNVAL):
 					obj.handle_expt_event()
-			except ExitNow:
+			except asyncore.ExitNow:
 				raise
 			except:
 				obj.handle_error()
