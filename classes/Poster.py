@@ -75,7 +75,7 @@ class Poster(BaseMangler):
 		_time = time.time
 		
 		# Wait until at least one connection is ready
-		last_reconnect = _time()
+		counter = 0
 		while 1:
 			now = _time()
 			_poll()
@@ -83,8 +83,9 @@ class Poster(BaseMangler):
 			if self._idle:
 				break
 			
-			if now - last_reconnect >= 1:
-				last_reconnect = now
+			counter += 1
+			if counter == 100:
+				counter = 0
 				for conn in self._conns:
 					if conn.state == asyncNNTP.STATE_DISCONNECTED and now >= conn.reconnect_at:
 						conn.do_connect()
@@ -112,18 +113,26 @@ class Poster(BaseMangler):
 				conn = self._idle.pop(0)
 				conn.post_article(postfile)
 			
-			# Only check reconnects once a second
-			if now - last_reconnect >= 1:
-				last_reconnect = now
+			# Do some stuff roughly once per second
+			counter += 1
+			if counter = 100:
+				counter = 0
+				
 				for conn in self._conns:
 					if conn.state == asyncNNTP.STATE_DISCONNECTED and now >= conn.reconnect_at:
 						conn.do_connect()
+				
+				if self._bytes:
+					interval = time.time() - start
+					speed = self._bytes / interval / 1024
+					print '%d articles remaining - %.1fKB/s     \r' % (len(self._articles), speed)
+					sys.stdout.flush()
 			
 			# All done?
 			if self._articles == [] and len(self._idle) == self.conf['server']['connections']:
 				interval = time.time() - start
 				speed = self._bytes / interval / 1024
-				self.logger.info('Posting complete - %d bytes in %.2fs (%.2fKB/s)',
+				self.logger.info('Posting complete - %d bytes in %.2fs (%.1fKB/s)',
 					self._bytes, interval, speed)
 				
 				# If we have some msgids left over, we might have to generate
