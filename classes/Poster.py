@@ -78,7 +78,7 @@ class Poster(BaseMangler):
 		last_reconnect = _time()
 		while 1:
 			now = _time()
-			_loop()
+			_poll()
 			
 			if self._idle:
 				break
