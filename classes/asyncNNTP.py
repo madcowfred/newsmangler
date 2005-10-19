@@ -117,11 +117,13 @@ class asyncNNTP(asyncore.dispatcher):
 		sent = asyncore.dispatcher.send(self, self._writebuf)
 		
 		self._writebuf = self._writebuf[sent:]
-		self.parent._bytes += sent
 		
 		# If we're posting, we might need to read some more data
-		if len(self._writebuf) <= POST_BUFFER_MIN and self.mode == MODE_POST_DATA:
-			self.post_data()
+		if self.mode == MODE_POST_DATA:
+			self.parent._bytes += sent
+			
+			if len(self._writebuf) <= POST_BUFFER_MIN:
+				self.post_data()
 	
 	# We want buffered output, duh
 	def send(self, data):
