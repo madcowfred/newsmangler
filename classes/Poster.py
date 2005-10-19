@@ -75,7 +75,7 @@ class Poster(BaseMangler):
 		_time = time.time
 		
 		# Wait until at least one connection is ready
-		counter = 0
+		last_stuff = _time()
 		while 1:
 			now = _time()
 			_poll()
@@ -83,9 +83,8 @@ class Poster(BaseMangler):
 			if self._idle:
 				break
 			
-			counter += 1
-			if counter == 100:
-				counter = 0
+			if now - last_stuff >= 1:
+				last_stuff = now
 				for conn in self._conns:
 					if conn.state == asyncNNTP.STATE_DISCONNECTED and now >= conn.reconnect_at:
 						conn.do_connect()
@@ -114,9 +113,8 @@ class Poster(BaseMangler):
 				conn.post_article(postfile)
 			
 			# Do some stuff roughly once per second
-			counter += 1
-			if counter = 100:
-				counter = 0
+			if now - last_stuff >= 1:
+				last_stuff = now
 				
 				for conn in self._conns:
 					if conn.state == asyncNNTP.STATE_DISCONNECTED and now >= conn.reconnect_at:
@@ -125,7 +123,7 @@ class Poster(BaseMangler):
 				if self._bytes:
 					interval = time.time() - start
 					speed = self._bytes / interval / 1024
-					print '%d articles remaining - %.1fKB/s     \r' % (len(self._articles), speed)
+					print '%d articles remaining - %.1fKB/s     \r' % (len(self._articles), speed),
 					sys.stdout.flush()
 			
 			# All done?
