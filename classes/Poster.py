@@ -123,7 +123,8 @@ class Poster(BaseMangler):
 				if self._bytes:
 					interval = time.time() - start
 					speed = self._bytes / interval / 1024
-					print '%d articles remaining - %.1fKB/s     \r' % (len(self._articles), speed),
+					left = len(self._articles) + (len(self._conns) - len(self._idle))
+					print '%d articles remaining - %.1fKB/s     \r' % (left, speed),
 					sys.stdout.flush()
 			
 			# All done?
