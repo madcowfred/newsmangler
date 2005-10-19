@@ -69,13 +69,33 @@ class Poster(BaseMangler):
 		# connect!
 		self.connect()
 		
-		# And loop
-		self._bytes = 0
-		last_reconnect = start = time.time()
-		
+		# Slight speedup
 		_poll = self.poll
 		_sleep = time.sleep
 		_time = time.time
+		
+		# Wait until at least one connection is ready
+		last_reconnect = _time()
+		while 1:
+			now = _time()
+			_loop()
+			
+			if self._idle:
+				break
+			
+			if now - last_reconnect >= 1:
+				last_reconnect = now
+				for conn in self._conns:
+					if conn.state == asyncNNTP.STATE_DISCONNECTED and now >= conn.reconnect_at:
+						conn.do_connect()
+			
+			_sleep(0.01)
+		
+		# And loop
+		self._bytes = 0
+		start = _time()
+		
+		self.logger.info('Posting %d articles...', len(self._articles))
 		
 		while 1:
 			now = _time()
@@ -114,7 +134,7 @@ class Poster(BaseMangler):
 				return
 			
 			# And sleep for a bit to try and cut CPU chompage
-			_sleep(0.02)
+			_sleep(0.01)
 	
 	# -----------------------------------------------------------------------
 	# Generate the list of articles we need to post

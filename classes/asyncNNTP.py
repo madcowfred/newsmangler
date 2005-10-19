@@ -76,7 +76,7 @@ class asyncNNTP(asyncore.dispatcher):
 			self.really_close(msg)
 		else:
 			self.state = STATE_CONNECTING
-			self.logger.info('%d: connecting to %s:%s', self.connid, self.host, self.port)
+			self.logger.debug('%d: connecting to %s:%s', self.connid, self.host, self.port)
 	
 	def add_channel(self):
 		asyncore.socket_map[self._fileno] = self
@@ -139,7 +139,7 @@ class asyncNNTP(asyncore.dispatcher):
 	
 	def handle_connect(self):
 		self.status = STATE_CONNECTED
-		self.logger.info('%d: connected!', self.connid)
+		self.logger.debug('%d: connected!', self.connid)
 	
 	def handle_close(self):
 		self.really_close()
@@ -183,7 +183,7 @@ class asyncNNTP(asyncore.dispatcher):
 					else:
 						self.mode = MODE_COMMAND
 						self.parent._idle.append(self)
-						self.logger.info('%d: ready.', self.connid)
+						self.logger.debug('%d: ready.', self.connid)
 				
 				# Need password too
 				elif resp in ('381'):
@@ -197,7 +197,7 @@ class asyncNNTP(asyncore.dispatcher):
 				elif resp in ('281'):
 					self.mode = MODE_COMMAND
 					self.parent._idle.append(self)
-					self.logger.info('%d: ready.', self.connid)
+					self.logger.debug('%d: ready.', self.connid)
 				
 				# Auth failure
 				elif resp in ('502'):
