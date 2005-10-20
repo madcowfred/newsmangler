@@ -115,13 +115,13 @@ class asyncNNTP(asyncore.dispatcher):
 			return
 		
 		sent = asyncore.dispatcher.send(self, self._writebuf[self._pointer:])
+		self._pointer += sent
+		
 		# We've run out of data
 		if self._pointer == len(self._writebuf):
 			self._writebuf = ''
 			self._pointer = 0
 			asyncore.poller.register(self._fileno, select.POLLIN)
-		else:
-			self._pointer += sent
 		
 		# If we're posting, we might need to read some more data from our file
 		if self.mode == MODE_POST_DATA:
@@ -211,7 +211,7 @@ class asyncNNTP(asyncore.dispatcher):
 				
 				# Dunno
 				else:
-					self.logger.warning('%d: unknown response from server - "%s"',
+					self.logger.warning('%d: unknown response while MODE_AUTH - "%s"',
 						self.connid, line)
 			
 			# Posting a file
