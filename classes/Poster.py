@@ -216,7 +216,7 @@ class Poster(BaseMangler):
 			# Now make up our parts
 			fileinfo = {
 				'dirname': post_title,
-				'filename': filename,
+				'filename': real_filename,
 				'filepath': filepath,
 				'filesize': filesize,
 				'parts': parts,
