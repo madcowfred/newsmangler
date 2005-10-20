@@ -108,3 +108,10 @@ def ySplit(line):
 	return fields
 
 # ---------------------------------------------------------------------------
+# Possibly use psyco to speed up encoding slightly (25-30% on 500KB parts)
+try:
+	import psyco
+except ImportError:
+	pass
+else:
+	psyco.bind(yEncode)
