@@ -45,6 +45,7 @@ class asyncNNTP(asyncore.dispatcher):
 		self._readbuf = ''
 		self._writebuf = ''
 		self._postfile = None
+		self._pointer = 0
 		
 		self.reconnect_at = 0
 		self.mode = MODE_AUTH
@@ -110,19 +111,22 @@ class asyncNNTP(asyncore.dispatcher):
 		
 		if not self.writable():
 			# We don't have any buffer, silly thing
-			#print '%d has no data!' % self._fileno
 			asyncore.poller.register(self._fileno, select.POLLIN)
 			return
 		
-		sent = asyncore.dispatcher.send(self, self._writebuf)
+		sent = asyncore.dispatcher.send(self, self._writebuf[self._pointer:])
+		# We've run out of data
+		if self._pointer == len(self._writebuf):
+			self._writebuf = ''
+			self._pointer = 0
+			asyncore.poller.register(self._fileno, select.POLLIN)
+		else:
+			self._pointer += sent
 		
-		self._writebuf = self._writebuf[sent:]
-		
-		# If we're posting, we might need to read some more data
+		# If we're posting, we might need to read some more data from our file
 		if self.mode == MODE_POST_DATA:
 			self.parent._bytes += sent
-			
-			if len(self._writebuf) <= POST_BUFFER_MIN:
+			if self._writebuf == '':
 				self.post_data()
 	
 	# We want buffered output, duh
