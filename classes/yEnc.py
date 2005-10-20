@@ -48,13 +48,15 @@ def yDecode(data):
 	return data.translate(YDEC_TRANS)
 
 def yEncode_C(postfile, data):
-	yenced, tempcrc = _yenc.encode_string(data)[:2]
-	yenced = yenced.replace('\r\n.', '\r\n..')
+	# If we don't have my modified yenc module, we have to do the . quoting
+	# ourselves. This is about 50% slower.
+	if HAVE_YENC_FRED:
+		yenced, tempcrc = _yenc.encode_string(data, escapedots=1)[:2]
+	else:
+		yenced, tempcrc = _yenc.encode_string(data)[:2]
+		yenced = yenced.replace('\r\n.', '\r\n..')
 	
 	postfile.write(yenced)
-	
-	if not yenced.endswith('\r\n'):
-		postfile.write('\r\n')
 	
 	return '%08x' % ((tempcrc ^ -1) & 2**32L - 1)
 
@@ -131,4 +133,5 @@ except ImportError:
 		psyco.bind(yEncode_Python)
 else:
 	HAVE_YENC = True
+	HAVE_YENC_FRED = ('Freddie' in _yenc.__doc__)
 	yEncode = yEncode_C
