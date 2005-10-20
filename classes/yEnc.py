@@ -58,6 +58,9 @@ def yEncode_C(postfile, data):
 	
 	postfile.write(yenced)
 	
+	if not yenced.endswith('\r\n'):
+		postfile.write('\r\n')
+	
 	return '%08x' % ((tempcrc ^ -1) & 2**32L - 1)
 
 def yEncode_Python(postfile, data, linelen=128):
