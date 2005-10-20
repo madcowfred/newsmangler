@@ -279,10 +279,9 @@ class Poster(BaseMangler):
 		postfile.write(line)
 		
 		# yEnc data
-		yEnc.yEncode(postfile, data)
+		partcrc = yEnc.yEncode(postfile, data)
 		
 		# yEnc end
-		partcrc = CRC32(data)
 		line = '=yend size=%d part=%d pcrc32=%s\r\n' % (end-begin, partnum, partcrc)
 		postfile.write(line)
 		

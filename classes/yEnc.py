@@ -32,12 +32,7 @@
 
 import re
 
-try:
-	import _yenc
-except ImportError:
-	HAVE_YENC = False
-else:
-	HAVE_YENC = True
+from classes.Common import CRC32
 
 # ---------------------------------------------------------------------------
 # Translation tables
@@ -52,7 +47,18 @@ def yDecode(data):
 	
 	return data.translate(YDEC_TRANS)
 
-def yEncode(postfile, data, linelen=128):
+def yEncode_C(postfile, data):
+	yenced, tempcrc = _yenc.encode_string(data)[:2]
+	yenced = yenced.replace('\r\n.', '\r\n..')
+	
+	postfile.write(yenced)
+	
+	if not yenced.endswith('\r\n'):
+		postfile.write('\r\n')
+	
+	return '%08x' % ((tempcrc ^ -1) & 2**32L - 1)
+
+def yEncode_Python(postfile, data, linelen=128):
 	'Encode data into yEnc format'
 	
 	translated = data.translate(YENC_TRANS)
@@ -89,6 +95,8 @@ def yEncode(postfile, data, linelen=128):
 		postfile.write(line)
 		postfile.write('\r\n')
 		start = end
+	
+	return CRC32(data)
 
 # ---------------------------------------------------------------------------
 
@@ -108,10 +116,19 @@ def ySplit(line):
 	return fields
 
 # ---------------------------------------------------------------------------
-# Possibly use psyco to speed up encoding slightly (25-30% on 500KB parts)
+# Use the _yenc C module if it's available. If not, try to use psyco to speed
+# up part encoding 25-30%.
 try:
-	import psyco
+	import _yenc
 except ImportError:
-	pass
+	HAVE_YENC = False
+	yEncode = yEncode_Python
+	try:
+		import psyco
+	except ImportError:
+		pass
+	else:
+		psyco.bind(yEncode_Python)
 else:
-	psyco.bind(yEncode)
+	HAVE_YENC = True
+	yEncode = yEncode_C
