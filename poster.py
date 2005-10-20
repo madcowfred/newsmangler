@@ -48,11 +48,16 @@ def main():
 		dest='group',
 		help='post to a different group than the default',
 	)
+	parser.add_option('-f', '--files',
+		dest='files',
+		help='assume all arguments are filenames instead of directories, and use SUBJECT as the base subject',
+		metavar='SUBJECT',
+	)
 	parser.add_option('-p', '--profile',
 		dest='profile',
 		action='store_true',
 		default=False,
-		help='run with the hotshot profiler',
+		help='run with the hotshot profiler (measures execution time of functions)',
 	)
 	
 	(options, args) = parser.parse_args()
@@ -63,15 +68,24 @@ def main():
 		sys.exit(1)
 	
 	# Make sure at least one of the args exists
-	dirs = []
-	for arg in args:
-		if os.path.isdir(arg):
-			dirs.append(arg)
-		else:
-			print 'ERROR: "%s" does not exist!' % (arg)
+	postme = []
+	post_title = None
+	if options.files:
+		post_title = options.files
+		for arg in args:
+			if os.path.isfile(arg):
+				postme.append(arg)
+			else:
+				print 'ERROR: "%s" does not exist or is not a file!' % (arg)
+	else:
+		for arg in args:
+			if os.path.isdir(arg):
+				postme.append(arg)
+			else:
+				print 'ERROR: "%s" does not exist or is not a file!' % (arg)
 	
-	if not dirs:
-		print 'ERROR: no valid directories provided on command line!'
+	if not postme:
+		print 'ERROR: no valid arguments provided on command line!'
 		sys.exit(1)
 	
 	# Parse our configuration file
@@ -95,7 +109,7 @@ def main():
 	if options.profile:
 		import hotshot
 		prof = hotshot.Profile('profile.poster')
-		prof.runcall(poster.post, newsgroup, dirs)
+		prof.runcall(poster.post, newsgroup, postme, post_title=post_title)
 		prof.close()
 		
 		import hotshot.stats
@@ -105,7 +119,7 @@ def main():
 		stats.print_stats(25)
 	
 	else:
-		poster.post(newsgroup, dirs)
+		poster.post(newsgroup, postme, post_title=post_title)
 
 # ---------------------------------------------------------------------------
 

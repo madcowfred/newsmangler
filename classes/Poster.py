@@ -59,14 +59,21 @@ class Poster(BaseMangler):
 		self._current_dir = None
 		self._msgids = {}
 		self.newsgroup = None
+		self.post_title = None
 	
-	def post(self, newsgroup, dirs):
+	def post(self, newsgroup, postme, post_title=None):
 		self.newsgroup = newsgroup
+		self.post_title = post_title
 		
 		# Generate the list of articles we need to post
-		self.generate_article_list(dirs)
+		self.generate_article_list(postme)
 		
-		# connect!
+		# If we have no valid articles, bail
+		if not self._articles:
+			self.logger.warning('No valid articles to post!')
+			return
+		
+		# Connect!
 		self.connect()
 		
 		# Slight speedup
@@ -146,66 +153,80 @@ class Poster(BaseMangler):
 	
 	# -----------------------------------------------------------------------
 	# Generate the list of articles we need to post
-	def generate_article_list(self, dirs):
-		for dirname in dirs:
-			if dirname.endswith(os.sep):
-				dirname = dirname[:-len(os.sep)]
-			if not dirname:
+	def generate_article_list(self, postme):
+		# "files" mode is just one lot of files
+		if self.post_title:
+			self._gal_files(self.post_title, postme)
+		# "dirs" mode could be a whole bunch
+		else:
+			for dirname in postme:
+				if dirname.endswith(os.sep):
+					dirname = dirname[:-len(os.sep)]
+				if not dirname:
+					continue
+				
+				self._gal_files(os.path.basename(dirname), os.listdir(dirname), basepath=dirname)
+		
+		# Debug junk
+		if 0:
+			for article in self._articles:
+				print article[1]
+	
+	# Do the heavy lifting for generate_article_list
+	def _gal_files(self, post_title, files, basepath=''):
+		article_size = self.conf['posting']['article_size']
+		
+		goodfiles = []
+		for filename in files:
+			filepath = os.path.abspath(os.path.join(basepath, filename))
+			
+			# Skip non-files and empty files
+			if not os.path.isfile(filepath):
+				continue
+			if filename in self.conf['posting']['skip_filenames']:
+				continue
+			filesize = os.path.getsize(filepath)
+			if not filesize:
 				continue
 			
-			article_size = self.conf['posting']['article_size']
+			goodfiles.append((filename, filepath, filesize))
+		goodfiles.sort()
+		
+		n = 1
+		for filename, filepath, filesize in goodfiles:
+			full, partial = divmod(filesize, article_size)
+			if partial:
+				parts = full + 1
+			else:
+				parts = full
 			
-			# Get a list of useful files
-			f = os.listdir(dirname)
-			files = []
-			for filename in f:
-				filepath = os.path.join(dirname, filename)
-				# Skip non-files and empty files
-				if not os.path.isfile(filepath):
-					continue
-				if not os.path.getsize(filepath):
-					continue
-				if filename in self.conf['posting']['skip_filenames']:
-					continue
-				files.append(filename)
-			files.sort()
+			# Build a subject
+			real_filename = os.path.split(filename)[1]
 			
-			n = 1
-			for filename in files:
-				filepath = os.path.join(dirname, filename)
-				filesize = os.path.getsize(filepath)
-				
-				full, partial = divmod(filesize, article_size)
-				if partial:
-					parts = full + 1
-				else:
-					parts = full
-				
-				# Build a subject
-				temp = '%%0%sd' % (len(str(len(files))))
-				filenum = temp % (n)
-				temp = '%%0%sd' % (len(str(parts)))
-				subject = '%s [%s/%d] - "%s" yEnc (%s/%d)' % (
-					os.path.basename(dirname), filenum, len(files), filename, temp, parts
-				)
-				
-				if self.conf['posting']['subject_prefix']:
-					subject = '%s %s' % (self.conf['posting']['subject_prefix'], subject)
-				
-				# Now make up our parts
-				fileinfo = {
-					'dirname': dirname,
-					'filename': filename,
-					'filepath': filepath,
-					'filesize': filesize,
-					'parts': parts,
-				}
-				
-				for i in range(parts):
-					article = [fileinfo, subject, i+1]
-					self._articles.append(article)
-				
-				n += 1
+			temp = '%%0%sd' % (len(str(len(files))))
+			filenum = temp % (n)
+			temp = '%%0%sd' % (len(str(parts)))
+			subject = '%s [%s/%d] - "%s" yEnc (%s/%d)' % (
+				post_title, filenum, len(files), real_filename, temp, parts
+			)
+			
+			if self.conf['posting']['subject_prefix']:
+				subject = '%s %s' % (self.conf['posting']['subject_prefix'], subject)
+			
+			# Now make up our parts
+			fileinfo = {
+				'dirname': post_title,
+				'filename': filename,
+				'filepath': filepath,
+				'filesize': filesize,
+				'parts': parts,
+			}
+			
+			for i in range(parts):
+				article = [fileinfo, subject, i+1]
+				self._articles.append(article)
+			
+			n += 1
 	
 	# -----------------------------------------------------------------------
 	# Build an article for posting.
