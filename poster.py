@@ -44,14 +44,18 @@ from classes.Poster import Poster
 def main():
 	# Parse our command line options
 	parser = OptionParser(usage='usage: %prog [options] dir1 dir2 ... dirN')
-	parser.add_option('-g', '--group',
-		dest='group',
-		help='post to a different group than the default',
+	parser.add_option('-c', '--config',
+		dest='config',
+		help='specify a different config file location',
 	)
 	parser.add_option('-f', '--files',
 		dest='files',
 		help='assume all arguments are filenames instead of directories, and use SUBJECT as the base subject',
 		metavar='SUBJECT',
+	)
+	parser.add_option('-g', '--group',
+		dest='group',
+		help='post to a different group than the default',
 	)
 	parser.add_option('-p', '--profile',
 		dest='profile',
@@ -89,7 +93,10 @@ def main():
 		sys.exit(1)
 	
 	# Parse our configuration file
-	conf = ParseConfig()
+	if options.config:
+		conf = ParseConfig(options.config)
+	else:
+		conf = ParseConfig()
 	
 	# Make sure the group is ok
 	if options.group:

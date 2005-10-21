@@ -39,8 +39,8 @@ from ConfigParser import ConfigParser
 
 # ---------------------------------------------------------------------------
 # Parse our configuration file
-def ParseConfig():
-	configfile = os.path.expanduser('~/.newsmangler.conf')
+def ParseConfig(cfgfile='~/.newsmangler.conf'):
+	configfile = os.path.expanduser(cfgfile)
 	if not os.path.isfile(configfile):
 		print 'ERROR: config file "%s" is missing!' % (configfile)
 		sys.exit(1)
