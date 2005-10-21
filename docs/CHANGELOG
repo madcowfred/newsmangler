@@ -1,0 +1,35 @@
+2005-10-20: * Speed up article list generation a bit.
+            * Add -fSUBJECT option for posting an arbitrary list of files
+              instead of a directory/directories.
+            * Use Psyco to speed up part encoding by 30-35% if it's available.
+            * Use my modified yenc module to speed up part encoding by 65-70%
+              if it's available.
+            * Strip the directory name from the filename field of =ybegin when
+              using files mode.
+            * Reduce memory thrashing by not continually creating a new string
+              for our data buffer. We now just use a pointer value and only
+              read a new block of data in once we have exhausted the current
+              one.
+            * Add FakePoll class, emulates select.poll() on systems that do not
+              have it (such as Windows).
+            * Add -cCONFIG option to specify a different config file.
+
+2005-10-19: * Print a status message once a second showing our progress.
+
+2005-10-18: * Move some more logging to DEBUG level.
+            * Don't set our posting start time until at least one thread is
+              connected. This makes our posting speed more accurate.
+            * Fix an invalid exception handler in asyncNNTP.
+            * Only increment our byte count if we're posting a file, commands
+              shouldn't count.
+
+
+2005-10-17: * Disable our Date: header generator, let the server do it.
+            * Modify the SO_SNDBUF of our sockets before we try to connect.
+
+2005-10-14: * Add posting/skip_filenames option.
+            * Clarify the comment for posting/default_group.
+            * Fix the begin field of our =ybegin lines bieng off by one. This
+              fixes decoding on NZB-o-matic at least.
+            * Write all groups out to the generated .nzb file if posting to
+              more than one.
