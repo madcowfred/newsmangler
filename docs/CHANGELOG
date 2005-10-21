@@ -13,6 +13,7 @@
             * Add FakePoll class, emulates select.poll() on systems that do not
               have it (such as Windows).
             * Add -cCONFIG option to specify a different config file.
+            * Add a log message detailing which yEncode version we're using.
 
 2005-10-19: * Print a status message once a second showing our progress.
 
@@ -23,13 +24,12 @@
             * Only increment our byte count if we're posting a file, commands
               shouldn't count.
 
-
 2005-10-17: * Disable our Date: header generator, let the server do it.
             * Modify the SO_SNDBUF of our sockets before we try to connect.
 
 2005-10-14: * Add posting/skip_filenames option.
             * Clarify the comment for posting/default_group.
-            * Fix the begin field of our =ybegin lines bieng off by one. This
-              fixes decoding on NZB-o-matic at least.
+            * Fix the begin field of our =ybegin lines being off by one. This
+              fixes decoding on NZB-O-Matic at least.
             * Write all groups out to the generated .nzb file if posting to
               more than one.
