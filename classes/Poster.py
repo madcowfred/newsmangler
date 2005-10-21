@@ -55,13 +55,24 @@ class Poster(BaseMangler):
 		
 		self._articles = []
 		self._files = {}
+		self._msgids = {}
 		
 		self._current_dir = None
-		self._msgids = {}
 		self.newsgroup = None
 		self.post_title = None
+		self._par2_queue = []
+		
+		# Some sort of useful logging junk about what yEncode we're using
+		if yEnc.HAVE_YENC_FRED:
+			self.logger.info('Using yenc-fred module yEncode.')
+		elif yEnc.HAVE_YENC:
+			self.logger.info('Using yenc module yEncode.')
+		elif yEnc.HAVE_PSYCO:
+			self.logger.info('Using Python+Psyco yEncode.')
+		else:
+			self.logger.info('Using Python yEncode.')
 	
-	def post(self, newsgroup, postme, post_title=None):
+	def post(self, newsgroup, postme, post_title=None, generate_par2=False):
 		self.newsgroup = newsgroup
 		self.post_title = post_title
 		

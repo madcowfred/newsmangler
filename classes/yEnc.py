@@ -35,6 +35,12 @@ import re
 from classes.Common import CRC32
 
 # ---------------------------------------------------------------------------
+
+HAVE_PSYCO = False
+HAVE_YENC = False
+HAVE_YENC_FRED = False
+
+# ---------------------------------------------------------------------------
 # Translation tables
 YDEC_TRANS = ''.join([chr((i + 256 - 42) % 256) for i in range(256)])
 YENC_TRANS = ''.join([chr((i + 42) % 256) for i in range(256)])
@@ -126,14 +132,14 @@ def ySplit(line):
 try:
 	import _yenc
 except ImportError:
-	HAVE_YENC = False
-	yEncode = yEncode_Python
 	try:
 		import psyco
 	except ImportError:
 		pass
 	else:
+		HAVE_PSYCO = True
 		psyco.bind(yEncode_Python)
+	yEncode = yEncode_Python
 else:
 	HAVE_YENC = True
 	HAVE_YENC_FRED = ('Freddie' in _yenc.__doc__)
