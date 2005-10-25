@@ -45,13 +45,19 @@ HAVE_YENC_FRED = False
 YDEC_TRANS = ''.join([chr((i + 256 - 42) % 256) for i in range(256)])
 YENC_TRANS = ''.join([chr((i + 42) % 256) for i in range(256)])
 
+YDEC_MAP = {}
+for i in range(256):
+	YDEC_MAP[chr(i)] = chr((i + 256 - 64) % 256)
+
+# ---------------------------------------------------------------------------
+
 def yDecode(data):
-	# unescape NUL, TAB, LF, CR, ., =
-	for i in (0, 9, 10, 13, 46, 61):
-		j = '=%c' % (i + 64)
-		data = data.replace(j, chr(i))
-	
+	# unescape any escaped char (grr)
+	data = re.sub(r'=(.)', yunescape, data)
 	return data.translate(YDEC_TRANS)
+
+def yunescape(m):
+	return YDEC_MAP[m.group(1)]
 
 def yEncode_C(postfile, data):
 	# If we don't have my modified yenc module, we have to do the . quoting
@@ -87,20 +93,19 @@ def yEncode_Python(postfile, data, linelen=128):
 	
 	while end < datalen:
 		end = min(datalen, start + linelen)
-		# escaped char on the end of the line
-		if translated[end-1:end] == '=':
-			end += 1
-		
 		line = translated[start:end]
 		
-		# dot at the start of the line
-		if line[0] == '.':
-			line = '.%s' % (line)
-		# escape tab/space at the start of a line
-		if line[0] in ('\x09', '\x20'):
-			line = '=%c%s' % (ord(line[0]) + 64, line[1:])
+		# escape tab/space/period at the start of a line
+		if line[0] in ('\x09', '\x20', '\x2e'):
+			line = '=%c%s' % (ord(line[0]) + 64, line[1:-1])
+			end -= 1
+		
+		# escaped char on the end of the line
+		if line[-1] == '=':
+			line += translated[end]
+			end += 1
 		# escape tab/space at the end of a line
-		if line[-1] in ('\x09', '\x20'):
+		elif line[-1] in ('\x09', '\x20'):
 			line = '%s=%c' % (line[:-1], ord(line[-1]) + 64)
 		
 		postfile.write(line)
