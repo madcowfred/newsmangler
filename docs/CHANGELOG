@@ -1,3 +1,10 @@
+2005-10-25: * Modify some logic in yEncode_Python to follow the yEnc specs a
+              little better. We now escape a leading period on a line, and
+              never write more than linelen+1 bytes per line.
+
+2005-10-21: * Add this file!
+            * Add a log message detailing which yEncode version we're using.
+
 2005-10-20: * Speed up article list generation a bit.
             * Add -fSUBJECT option for posting an arbitrary list of files
               instead of a directory/directories.
@@ -13,7 +20,6 @@
             * Add FakePoll class, emulates select.poll() on systems that do not
               have it (such as Windows).
             * Add -cCONFIG option to specify a different config file.
-            * Add a log message detailing which yEncode version we're using.
 
 2005-10-19: * Print a status message once a second showing our progress.
 
