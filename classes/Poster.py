@@ -218,7 +218,7 @@ class Poster(BaseMangler):
 			filenum = temp % (n)
 			temp = '%%0%sd' % (len(str(parts)))
 			subject = '%s [%s/%d] - "%s" yEnc (%s/%d)' % (
-				post_title, filenum, len(files), real_filename, temp, parts
+				post_title, filenum, len(goodfiles), real_filename, temp, parts
 			)
 			
 			if self.conf['posting']['subject_prefix']:

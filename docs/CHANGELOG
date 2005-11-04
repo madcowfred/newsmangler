@@ -1,3 +1,6 @@
+2005-11-04: * Fix posted files count being incorrect if we end up skipping some
+              things.
+
 2005-10-25: * Modify some logic in yEncode_Python to follow the yEnc specs a
               little better. We now escape a leading period on a line, and
               never write more than linelen+1 bytes per line.
