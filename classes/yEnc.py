@@ -132,6 +132,17 @@ def ySplit(line):
 	return fields
 
 # ---------------------------------------------------------------------------
+def yEncMode():
+	if HAVE_YENC_FRED:
+		return 'yenc-fred'
+	elif HAVE_YENC:
+		return 'yenc-vanilla'
+	elif HAVE_PSYCO:
+		return 'python-psyco'
+	else:
+		return 'python-vanilla'
+
+# ---------------------------------------------------------------------------
 # Use the _yenc C module if it's available. If not, try to use psyco to speed
 # up part encoding 25-30%.
 try:

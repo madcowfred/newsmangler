@@ -63,14 +63,7 @@ class Poster(BaseMangler):
 		self._par2_queue = []
 		
 		# Some sort of useful logging junk about what yEncode we're using
-		if yEnc.HAVE_YENC_FRED:
-			self.logger.info('Using yenc-fred module yEncode.')
-		elif yEnc.HAVE_YENC:
-			self.logger.info('Using yenc module yEncode.')
-		elif yEnc.HAVE_PSYCO:
-			self.logger.info('Using Python+Psyco yEncode.')
-		else:
-			self.logger.info('Using Python yEncode.')
+		self.logger.info('Using %s module for yEnc encoding.', yEnc.yEncMode())
 	
 	def post(self, newsgroup, postme, post_title=None, generate_par2=False):
 		self.newsgroup = newsgroup
@@ -276,7 +269,8 @@ class Poster(BaseMangler):
 		line = 'Message-ID: <%s>\r\n' % (msgid)
 		postfile.write(line)
 		
-		line = 'X-Newsposter: newsmangler %s - http://www.madcowdisease.org/mcd/newsmangler\r\n' % (__version__)
+		line = 'X-Newsposter: newsmangler %s (%s) - http://www.madcowdisease.org/mcd/newsmangler\r\n' % (
+			__version__, yEnc.yEncMode())
 		postfile.write(line)
 		
 		postfile.write('\r\n')
