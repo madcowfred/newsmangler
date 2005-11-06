@@ -43,8 +43,6 @@ from classes import yEnc
 from classes.BaseMangler import BaseMangler
 from classes.Common import *
 
-__version__ = '0.01'
-
 # ---------------------------------------------------------------------------
 
 class Poster(BaseMangler):
@@ -270,7 +268,7 @@ class Poster(BaseMangler):
 		postfile.write(line)
 		
 		line = 'X-Newsposter: newsmangler %s (%s) - http://www.madcowdisease.org/mcd/newsmangler\r\n' % (
-			__version__, yEnc.yEncMode())
+			NM_VERSION, yEnc.yEncMode())
 		postfile.write(line)
 		
 		postfile.write('\r\n')
