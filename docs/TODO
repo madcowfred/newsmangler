@@ -11,3 +11,7 @@ Poster
 * Work out how to have the .NZB files generated before we start posting, so
   it can be posted along with the other files (for weird people).
 * Add part retrying when something goes BORK with a connection.
+* Add PAR2 generation. Read the par2cmdline source to work out how it decides
+  how many blocks/files to generate for a given block/source size (so we know
+  how many total files). Use popen to run the par2cmdline process in the
+  background until it generates the files. Post them. The End.
