@@ -158,5 +158,5 @@ except ImportError:
 	yEncode = yEncode_Python
 else:
 	HAVE_YENC = True
-	HAVE_YENC_FRED = ('Freddie' in _yenc.__doc__)
+	HAVE_YENC_FRED = ('Freddie mod' in _yenc.__doc__)
 	yEncode = yEncode_C
