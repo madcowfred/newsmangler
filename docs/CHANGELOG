@@ -1,5 +1,8 @@
 2005-11-06: * Bump the version to 0.02 to try and track down which version
               people are using.
+            * Add the yEncode method we're using to the X-Newsposter header.
+            * Require a newer ID string from yenc-freddie for it to be
+              recognised.
 
 2005-11-04: * Fix posted files count being incorrect if we end up skipping some
               things.
