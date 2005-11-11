@@ -263,7 +263,7 @@ class Poster(BaseMangler):
 		line = 'Subject: %s\r\n' % (subj)
 		postfile.write(line)
 		
-		msgid = '%.5f,%d@%s' % (time.time(), partnum, self.conf['server']['hostname'])
+		msgid = '%.5f.%d@%s' % (time.time(), partnum, self.conf['server']['hostname'])
 		line = 'Message-ID: <%s>\r\n' % (msgid)
 		postfile.write(line)
 		
@@ -274,7 +274,7 @@ class Poster(BaseMangler):
 		postfile.write('\r\n')
 		
 		# yEnc start
-		line = '=ybegin part=%d total=%d line=256 size=%d name=%s\r\n' % (
+		line = '=ybegin part=%d total=%d line=128 size=%d name=%s\r\n' % (
 			partnum, fileinfo['parts'], fileinfo['filesize'], fileinfo['filename']
 		)
 		postfile.write(line)

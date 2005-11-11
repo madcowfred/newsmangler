@@ -1,3 +1,8 @@
+2005-11-11: * Change the Message-ID generation slightly to better match
+              "expected" behaviour. (patch by Super-Fly)
+            * Fix the =ybegin line so it has the correct line length.
+              (patch by Super-Fly)
+
 2005-11-06: * Bump the version to 0.02 to try and track down which version
               people are using.
             * Add the yEncode method we're using to the X-Newsposter header.
