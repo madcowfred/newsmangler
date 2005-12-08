@@ -96,9 +96,11 @@ def yEncode_Python(postfile, data, linelen=128):
 		line = translated[start:end]
 		
 		# escape tab/space/period at the start of a line
-		if line[0] in ('\x09', '\x20', '\x2e'):
+		if line[0] in ('\x09', '\x20'):
 			line = '=%c%s' % (ord(line[0]) + 64, line[1:-1])
 			end -= 1
+		elif line[0] == '\x2e':
+			line = '.%s' % (line)
 		
 		# escaped char on the end of the line
 		if line[-1] == '=':
