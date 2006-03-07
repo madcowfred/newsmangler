@@ -223,12 +223,18 @@ class asyncNNTP(asyncore.dispatcher):
 					self.logger.debug('%d: posting article.', self.connid)
 					
 					self.post_data()
+				
 				# Not ok
 				elif resp == '440':
 					self.mode = MODE_COMMAND
 					self.parent._idle.append(self)
 					del self._postfile
 					self.logger.warning('%d: posting not allowed!', self.connid)
+				
+				# WTF?
+				else:
+					self.logger.warning('%d: unknown response while MODE_POST_INIT - "%s"',
+						self.connid, line)
 			
 			# Done posting
 			elif self.mode == MODE_POST_DONE:
@@ -238,10 +244,17 @@ class asyncNNTP(asyncore.dispatcher):
 					self.mode = MODE_COMMAND
 					self.parent._idle.append(self)
 					self.logger.debug('%d: posting complete.', self.connid)
+				
+				# Not ok
 				elif resp.startswith('44'):
 					self.mode = MODE_COMMAND
 					self.parent._idle.append(self)
 					self.logger.warning('%d: posting failed - %s', self.connid, line)
+				
+				# WTF?
+				else:
+					self.logger.warning('%d: unknown response while MODE_POST_DONE - "%s"',
+						self.connid, line)
 			
 			# Other stuff
 			else:
