@@ -30,7 +30,7 @@
 
 """Various miscellaneous useful functions."""
 
-NM_VERSION = '0.02'
+NM_VERSION = '0.03'
 
 import os
 import zlib
