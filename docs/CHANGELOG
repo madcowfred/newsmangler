@@ -1,3 +1,5 @@
+2008-05-09: * Strip whitespace from the newsgroup list to obey RFC1036.
+
 2005-11-11: * Change the Message-ID generation slightly to better match
               "expected" behaviour. (patch by Super-Fly)
             * Fix the =ybegin line so it has the correct line length.
