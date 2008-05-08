@@ -46,22 +46,28 @@ def main():
 	parser = OptionParser(usage='usage: %prog [options] dir1 dir2 ... dirN')
 	parser.add_option('-c', '--config',
 		dest='config',
-		help='specify a different config file location',
+		help='Specify a different config file location',
 	)
 	parser.add_option('-f', '--files',
 		dest='files',
-		help='assume all arguments are filenames instead of directories, and use SUBJECT as the base subject',
+		help='Assume all arguments are filenames instead of directories, and use SUBJECT as the base subject',
 		metavar='SUBJECT',
 	)
 	parser.add_option('-g', '--group',
 		dest='group',
-		help='post to a different group than the default',
+		help='Post to a different group than the default',
 	)
-	parser.add_option('-p', '--profile',
+	parser.add_option('-p', '--par2',
+		dest='generate_par2',
+		action='store_true',
+		default=False,
+		help="Generate PAR2 files in the background if they don't exist already.",
+	)
+	parser.add_option('--profile',
 		dest='profile',
 		action='store_true',
 		default=False,
-		help='run with the hotshot profiler (measures execution time of functions)',
+		help='Run with the hotshot profiler (measures execution time of functions)',
 	)
 	
 	(options, args) = parser.parse_args()
@@ -110,13 +116,18 @@ def main():
 	else:
 		newsgroup = conf['posting']['default_group']
 	
+	# Strip whitespace from the newsgroup list to obey RFC1036
+	for c in (' ', '\t'):
+		newsgroup = newsgroup.replace(c, '')
+	
 	# And off we go
 	poster = Poster(conf)
 	
 	if options.profile:
 		import hotshot
 		prof = hotshot.Profile('profile.poster')
-		prof.runcall(poster.post, newsgroup, postme, post_title=post_title)
+		prof.runcall(poster.post, newsgroup, postme, post_title=post_title,
+			generate_par2=options.generate_par2)
 		prof.close()
 		
 		import hotshot.stats
@@ -126,7 +137,8 @@ def main():
 		stats.print_stats(25)
 	
 	else:
-		poster.post(newsgroup, postme, post_title=post_title)
+		poster.post(newsgroup, postme, post_title=post_title,
+			generate_par2=options.generate_par2)
 
 # ---------------------------------------------------------------------------
 
