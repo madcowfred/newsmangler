@@ -1,0 +1,2 @@
+newsmangler is a basic client for posting to Usenet. The only notable feature is
+multiple connection support to efficiently utilize modern bandwidth.
