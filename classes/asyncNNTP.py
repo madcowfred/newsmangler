@@ -79,15 +79,15 @@ class asyncNNTP(asyncore.dispatcher):
 			self.state = STATE_CONNECTING
 			self.logger.debug('%d: connecting to %s:%s', self.connid, self.host, self.port)
 	
-	def add_channel(self):
-		asyncore.socket_map[self._fileno] = self
+	def add_channel(self, map=None):
+		asyncore.dispatcher.add_channel(self, map)
+		
 		# Add ourselves to the poll object
 		asyncore.poller.register(self._fileno)
 	
-	def del_channel(self):
+	def del_channel(self, map=None):
 		# Remove ourselves from the async map
-		if asyncore.socket_map.has_key(self._fileno):
-			del asyncore.socket_map[self._fileno]
+		asyncore.dispatcher.del_channel(self, map)
 		
 		# Remove ourselves from the poll object
 		try:

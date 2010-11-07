@@ -1,3 +1,6 @@
+2010-11-07: * Change asyncNNTP to extend asyncore.dispatcher channel methods
+              properly.
+
 2008-05-09: * Strip whitespace from the newsgroup list to obey RFC1036.
 
 2005-11-11: * Change the Message-ID generation slightly to better match

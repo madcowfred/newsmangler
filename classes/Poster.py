@@ -104,7 +104,7 @@ class Poster(BaseMangler):
 		self._bytes = 0
 		start = _time()
 		
-		self.logger.info('Posting %d articles...', len(self._articles))
+		self.logger.info('Posting %d article(s)...', len(self._articles))
 		
 		while 1:
 			now = _time()
