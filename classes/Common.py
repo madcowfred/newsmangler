@@ -75,6 +75,7 @@ def XMLBrackets(s):
 	s = s.replace('<', '&lt;')
 	s = s.replace('>', '&gt;')
 	s = s.replace('"', '&#34;')
+	s = s.replace('&', '&amp;')
 	return s
 
 # ---------------------------------------------------------------------------
