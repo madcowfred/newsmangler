@@ -95,20 +95,25 @@ def yEncode_Python(postfile, data, linelen=128):
 		end = min(datalen, start + linelen)
 		line = translated[start:end]
 		
-		# escape tab/space/period at the start of a line
-		if line[0] in ('\x09', '\x20'):
-			line = '=%c%s' % (ord(line[0]) + 64, line[1:-1])
-			end -= 1
-		elif line[0] == '\x2e':
-			line = '.%s' % (line)
-		
-		# escaped char on the end of the line
-		if line[-1] == '=':
-			line += translated[end]
-			end += 1
-		# escape tab/space at the end of a line
-		elif line[-1] in ('\x09', '\x20'):
-			line = '%s=%c' % (line[:-1], ord(line[-1]) + 64)
+		# FIXME: line consisting entirely of a space/tab
+		if start == end - 1:
+			if line[0] in ('\x09', '\x20'):
+				line = '=%c' % (ord(line[0]) + 64)
+		else:
+			# escape tab/space/period at the start of a line
+			if line[0] in ('\x09', '\x20'):
+				line = '=%c%s' % (ord(line[0]) + 64, line[1:-1])
+				end -= 1
+			elif line[0] == '\x2e':
+				line = '.%s' % (line)
+			
+			# escaped char on the end of the line
+			if line[-1] == '=':
+				line += translated[end]
+				end += 1
+			# escape tab/space at the end of a line
+			elif line[-1] in ('\x09', '\x20'):
+				line = '%s=%c' % (line[:-1], ord(line[-1]) + 64)
 		
 		postfile.write(line)
 		postfile.write('\r\n')
