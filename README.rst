@@ -7,7 +7,12 @@ multiple connection support to efficiently utilize modern bandwidth.
 
 Installation
 ============
-Copy sample.conf to ~/.newsmangler.conf, edit the options as appropriate.
+#. Download the source: ``git clone git://github.com/madcowfred/newsmangler.git``
+
+#. Copy sample.conf to ~/.newsmangler.conf, edit the options as appropriate.
+
+#. Download and install the `yenc module <https://bitbucket.org/dual75/yenc>`_
+   for greatly improved yEnc encoding speed.
 
 Usage
 =====
