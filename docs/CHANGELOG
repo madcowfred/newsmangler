@@ -1,3 +1,15 @@
+2012-03-08: * Remove leecher.py and classes/Leecher.py, there are plenty of
+              great options for downloading files already.
+            * Add -d/--debug option to actually display debug information.
+            * Add some extra debug logging to classes/asyncNNTP.
+            * Change the .nzb generation code to use ElementTree, no reason
+              at all to do this manually.
+            * Update README.
+
+2012-01-13: * Ugly fix for an article that ends with a line consisting of a
+              single space/tab character.
+            * Fix unquoted ampersands in XML output breaking strict parsers.
+
 2010-11-07: * Change asyncNNTP to extend asyncore.dispatcher channel methods
               properly.
 
