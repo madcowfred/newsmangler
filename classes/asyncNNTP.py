@@ -192,7 +192,7 @@ class asyncNNTP(asyncore.dispatcher):
 					if self.username:
 						text = 'AUTHINFO USER %s\r\n' % (self.username)
 						self.send(text)
-						self.logger.debug('%d: > %s', self.connid, text.strip())
+						self.logger.debug('%d: > AUTHINFO USER ********', self.connid)
 					else:
 						self.mode = MODE_COMMAND
 						self.parent._idle.append(self)
