@@ -181,17 +181,18 @@ class asyncNNTP(asyncore.dispatcher):
 		
 		# Do something useful here
 		for line in lines:
+			self.logger.debug('%d: < %s', self.connid, line)
+
 			# Initial login stuff
 			if self.mode == MODE_AUTH:
 				resp = line.split(None, 1)[0]
-
-				self.logger.debug('%d: < %s', self.connid, line)
 				
 				# Welcome... post, no post
 				if resp in ('200', '201'):
 					if self.username:
 						text = 'AUTHINFO USER %s\r\n' % (self.username)
 						self.send(text)
+						self.logger.debug('%d: > %s', self.connid, text.strip())
 					else:
 						self.mode = MODE_COMMAND
 						self.parent._idle.append(self)
@@ -202,6 +203,7 @@ class asyncNNTP(asyncore.dispatcher):
 					if self.password:
 						text = 'AUTHINFO PASS %s\r\n' % (self.password)
 						self.send(text)
+						self.logger.debug('%d: > AUTHINFO PASS ********', self.connid)
 					else:
 						self.really_close('need password!')
 				
@@ -223,14 +225,13 @@ class asyncNNTP(asyncore.dispatcher):
 			# Posting a file
 			elif self.mode == MODE_POST_INIT:
 				resp = line.split(None, 1)[0]
-				# Ok
+				# Posting is allowed
 				if resp == '340':
 					self.mode = MODE_POST_DATA
-					self.logger.debug('%d: posting article.', self.connid)
 					
 					self.post_data()
 				
-				# Not ok
+				# Posting is not allowed
 				elif resp == '440':
 					self.mode = MODE_COMMAND
 					self.parent._idle.append(self)
@@ -249,7 +250,6 @@ class asyncNNTP(asyncore.dispatcher):
 				if resp == '240':
 					self.mode = MODE_COMMAND
 					self.parent._idle.append(self)
-					self.logger.debug('%d: posting complete.', self.connid)
 				
 				# Not ok
 				elif resp.startswith('44'):
@@ -273,6 +273,7 @@ class asyncNNTP(asyncore.dispatcher):
 		self.mode = MODE_POST_INIT
 		self._postfile = postfile
 		self.send('POST\n')
+		self.logger.debug('%d: > POST', self.connid)
 	
 	def post_data(self):
 		data = self._postfile.read(POST_READ_SIZE)
