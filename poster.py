@@ -57,11 +57,17 @@ def main():
 		dest='group',
 		help='Post to a different group than the default',
 	)
-	parser.add_option('-p', '--par2',
-		dest='generate_par2',
+	# parser.add_option('-p', '--par2',
+	# 	dest='generate_par2',
+	# 	action='store_true',
+	# 	default=False,
+	# 	help="Generate PAR2 files in the background if they don't exist already.",
+	# )
+	parser.add_option('-d', '--debug',
+		dest='debug',
 		action='store_true',
 		default=False,
-		help="Generate PAR2 files in the background if they don't exist already.",
+		help="Enable debug logging",
 	)
 	parser.add_option('--profile',
 		dest='profile',
@@ -69,7 +75,7 @@ def main():
 		default=False,
 		help='Run with the hotshot profiler (measures execution time of functions)',
 	)
-	
+
 	(options, args) = parser.parse_args()
 	
 	# No args? We have nothing to do!
@@ -117,17 +123,16 @@ def main():
 		newsgroup = conf['posting']['default_group']
 	
 	# Strip whitespace from the newsgroup list to obey RFC1036
-	for c in (' ', '\t'):
+	for c in (' \t'):
 		newsgroup = newsgroup.replace(c, '')
 	
 	# And off we go
-	poster = Poster(conf)
+	poster = Poster(conf, options.debug)
 	
 	if options.profile:
 		import hotshot
 		prof = hotshot.Profile('profile.poster')
-		prof.runcall(poster.post, newsgroup, postme, post_title=post_title,
-			generate_par2=options.generate_par2)
+		prof.runcall(poster.post, newsgroup, postme, post_title=post_title)
 		prof.close()
 		
 		import hotshot.stats
@@ -137,8 +142,7 @@ def main():
 		stats.print_stats(25)
 	
 	else:
-		poster.post(newsgroup, postme, post_title=post_title,
-			generate_par2=options.generate_par2)
+		poster.post(newsgroup, postme, post_title=post_title)
 
 # ---------------------------------------------------------------------------
 

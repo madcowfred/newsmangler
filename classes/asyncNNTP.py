@@ -81,6 +81,8 @@ class asyncNNTP(asyncore.dispatcher):
 	
 	def add_channel(self, map=None):
 		asyncore.dispatcher.add_channel(self, map)
+
+		self.logger.debug('%d: adding FD %d to poller', self.connid, self._fileno)
 		
 		# Add ourselves to the poll object
 		asyncore.poller.register(self._fileno)
@@ -88,13 +90,15 @@ class asyncNNTP(asyncore.dispatcher):
 	def del_channel(self, map=None):
 		# Remove ourselves from the async map
 		asyncore.dispatcher.del_channel(self, map)
+
+		self.logger.debug('%d: removing FD %d from poller', self.connid, self._fileno)
 		
 		# Remove ourselves from the poll object
 		try:
 			asyncore.poller.unregister(self._fileno)
 		except KeyError:
 			pass
-	
+
 	def close(self):
 		self.del_channel()
 		if self.socket is not None:
@@ -180,6 +184,8 @@ class asyncNNTP(asyncore.dispatcher):
 			# Initial login stuff
 			if self.mode == MODE_AUTH:
 				resp = line.split(None, 1)[0]
+
+				self.logger.debug('%d: < %s', self.connid, line)
 				
 				# Welcome... post, no post
 				if resp in ('200', '201'):

@@ -42,7 +42,7 @@ from classes import asyncNNTP
 # ---------------------------------------------------------------------------
 
 class BaseMangler:
-	def __init__(self, conf):
+	def __init__(self, conf, debug):
 		self.conf = conf
 	
 		self._conns = []
@@ -54,7 +54,10 @@ class BaseMangler:
 		formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
 		handler.setFormatter(formatter)
 		self.logger.addHandler(handler)
-		self.logger.setLevel(logging.INFO)
+		if debug:
+			self.logger.setLevel(logging.DEBUG)
+		else:
+			self.logger.setLevel(logging.INFO)
 		
 		# Create a poll object for async bits to use. If the user doesn't have
 		# poll, we're going to have to fake it.
