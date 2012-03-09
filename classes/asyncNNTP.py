@@ -272,7 +272,7 @@ class asyncNNTP(asyncore.dispatcher):
 	def post_article(self, postfile):
 		self.mode = MODE_POST_INIT
 		self._postfile = postfile
-		self.send('POST\n')
+		self.send('POST\r\n')
 		self.logger.debug('%d: > POST', self.connid)
 	
 	def post_data(self):
