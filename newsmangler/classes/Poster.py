@@ -45,6 +45,7 @@ except:
 
 from classes import asyncNNTP
 from classes import yEnc
+from classes.article import Article
 from classes.BaseMangler import BaseMangler
 from classes.Common import *
 
@@ -120,14 +121,14 @@ class Poster(BaseMangler):
 			# Possibly post some more parts now
 			while self._idle and self._articles:
 				article = self._articles.pop(0)
-				postfile = StringIO()
-				self.build_article(postfile, article)
+				#postfile = StringIO()
+				art = self.build_article(*article)
 				
 				conn = self._idle.pop(0)
-				conn.post_article(postfile)
+				conn.post_article(art)
 			
-			# Do some stuff roughly once per second
-			if now - last_stuff >= 1:
+			# Do some stuff every ~0.5s
+			if now - last_stuff >= 0.5:
 				last_stuff = now
 				
 				for conn in self._conns:
@@ -142,7 +143,7 @@ class Poster(BaseMangler):
 					sys.stdout.flush()
 			
 			# All done?
-			if self._articles == [] and len(self._idle) == self.conf['server']['connections']:
+			if len(self._articles) == 0 and len(self._idle) == self.conf['server']['connections']:
 				interval = time.time() - start
 				speed = self._bytes / interval / 1024
 				self.logger.info('Posting complete - %d bytes in %.2fs (%.1fKB/s)',
@@ -153,10 +154,26 @@ class Poster(BaseMangler):
 				if self.conf['posting']['generate_nzbs'] and self._msgids:
 					self.generate_nzb()
 				
-				return
+				break
 			
 			# And sleep for a bit to try and cut CPU chompage
 			_sleep(0.01)
+	
+	# -----------------------------------------------------------------------
+	# Maybe remember the msgid for later
+	def remember_msgid(self, article_size, article):
+		if self.conf['posting']['generate_nzbs']:
+			if self._current_dir != article._fileinfo['dirname']:
+				if self._msgids:
+					self.generate_nzb()
+					self._msgids = {}
+				
+				self._current_dir = article._fileinfo['dirname']
+			
+			subj = article._subject % (1)
+			if subj not in self._msgids:
+				self._msgids[subj] = [int(time.time())]
+			self._msgids[subj].append((article.headers['Message-ID'], article_size))
 	
 	# -----------------------------------------------------------------------
 	# Generate the list of articles we need to post
@@ -230,15 +247,14 @@ class Poster(BaseMangler):
 			}
 			
 			for i in range(parts):
-				article = [fileinfo, subject, i+1]
-				self._articles.append(article)
+				self._articles.append([fileinfo, subject, i+1])
 			
 			n += 1
 	
 	# -----------------------------------------------------------------------
 	# Build an article for posting.
-	def build_article(self, postfile, article):
-		(fileinfo, subject, partnum) = article
+	def build_article(self, fileinfo, subject, partnum):
+		#(fileinfo, subject, partnum) = article
 		
 		# Read the chunk of data from the file
 		f = self._files.get(fileinfo['filepath'], None)
@@ -254,80 +270,30 @@ class Poster(BaseMangler):
 			self._files[fileinfo['filepath']].close()
 			del self._files[fileinfo['filepath']]
 		
-		# Basic headers
-		line = 'From: %s\r\n' % (self.conf['posting']['from'])
-		postfile.write(line)
-		
-		line = 'Newsgroups: %s\r\n' % (self.newsgroup)
-		postfile.write(line)
-		
-		#line = time.strftime('Date: %a, %d %b %Y %H:%M:%S GMT\r\n', time.gmtime())
-		#postfile.write(line)
-		
-		subj = subject % (partnum)
-		line = 'Subject: %s\r\n' % (subj)
-		postfile.write(line)
-		
-		msgid = '%.5f.%d@%s' % (time.time(), partnum, self.conf['server']['hostname'])
-		line = 'Message-ID: <%s>\r\n' % (msgid)
-		postfile.write(line)
-		
-		line = 'X-Newsposter: newsmangler %s (%s) - http://www.madcowdisease.org/mcd/newsmangler\r\n' % (
+		# Make a new article object and set headers
+		art = Article(data, begin, end, fileinfo, subject, partnum)
+		art.headers['From'] = self.conf['posting']['from']
+		art.headers['Newsgroups'] = self.newsgroup
+		art.headers['Subject'] = subject % (partnum)
+		art.headers['Message-ID'] = '<%.5f.%d@%s>' % (time.time(), partnum, self.conf['server']['hostname'])
+		art.headers['X-Newsposter'] = 'newsmangler %s (%s) - https://github.com/madcowfred/newsmangler\r\n' % (
 			NM_VERSION, yEnc.yEncMode())
-		postfile.write(line)
-		
-		postfile.write('\r\n')
-		
-		# yEnc start
-		line = '=ybegin part=%d total=%d line=128 size=%d name=%s\r\n' % (
-			partnum, fileinfo['parts'], fileinfo['filesize'], fileinfo['filename']
-		)
-		postfile.write(line)
-		line = '=ypart begin=%d end=%d\r\n' % (begin+1, end)
-		postfile.write(line)
-		
-		# yEnc data
-		partcrc = yEnc.yEncode(postfile, data)
-		
-		# yEnc end
-		line = '=yend size=%d part=%d pcrc32=%s\r\n' % (end-begin, partnum, partcrc)
-		postfile.write(line)
-		
-		# And done writing for now
-		postfile.write('.\r\n')
-		article_size = postfile.tell()
-		postfile.seek(0, 0)
-		
-		# Maybe remember the msgid for later
-		if self.conf['posting']['generate_nzbs']:
-			if self._current_dir != fileinfo['dirname']:
-				if self._msgids:
-					self.generate_nzb()
-					self._msgids = {}
-				
-				self._current_dir = fileinfo['dirname']
-			
-			subj = subject % (1)
-			if subj not in self._msgids:
-				self._msgids[subj] = [int(time.time())]
-			self._msgids[subj].append((msgid, article_size))
+
+		return art
 	
 	# -----------------------------------------------------------------------
 	# Generate a .NZB file!
 	def generate_nzb(self):
 		filename = 'newsmangler_%s.nzb' % (SafeFilename(self._current_dir))
-		
+
 		self.logger.info('Begin generation of %s', filename)
 
 		gentime = time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())
-
 		root = ET.Element('nzb')
 		root.append(ET.Comment('Generated by newsmangler v%s at %s' % (NM_VERSION, gentime)))
 
 		for subject, msgids in self._msgids.items():
 			posttime = msgids.pop(0)
-
-			print posttime
 
 			# file
 			f = ET.SubElement(root, 'file',

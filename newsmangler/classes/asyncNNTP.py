@@ -3,6 +3,7 @@
 import asyncore
 import errno
 import logging
+import re
 import select
 import socket
 import time
@@ -22,6 +23,8 @@ MODE_DATA = 5
 
 POST_BUFFER_MIN = 16384
 POST_READ_SIZE = 262144
+
+MSGID_RE = re.compile(r'(<\S+@\S+>)')
 
 # ---------------------------------------------------------------------------
 
@@ -44,7 +47,7 @@ class asyncNNTP(asyncore.dispatcher):
 	def reset(self):
 		self._readbuf = ''
 		self._writebuf = ''
-		self._postfile = None
+		self._article = None
 		self._pointer = 0
 		
 		self.reconnect_at = 0
@@ -229,13 +232,24 @@ class asyncNNTP(asyncore.dispatcher):
 				if resp == '340':
 					self.mode = MODE_POST_DATA
 					
+					# TODO: use the suggested message-ID, will require some rethinking as to how
+					#       messages are constructed
+					m = MSGID_RE.search(line)
+					if m:
+						print 'changing Message-ID to %s' % (m.group(1))
+						self._article.headers['Message-ID'] = m.group(1)
+
+					# Prepare the article for posting
+					article_size = self._article.prepare()
+					self.parent.remember_msgid(article_size, self._article)# self._article._remember_subject)
+
 					self.post_data()
 				
 				# Posting is not allowed
 				elif resp == '440':
 					self.mode = MODE_COMMAND
 					self.parent._idle.append(self)
-					del self._postfile
+					del self._article
 					self.logger.warning('%d: posting not allowed!', self.connid)
 				
 				# WTF?
@@ -269,18 +283,18 @@ class asyncNNTP(asyncore.dispatcher):
 	
 	# -----------------------------------------------------------------------
 	# Guess what this does!
-	def post_article(self, postfile):
+	def post_article(self, article):
 		self.mode = MODE_POST_INIT
-		self._postfile = postfile
+		self._article = article
 		self.send('POST\r\n')
 		self.logger.debug('%d: > POST', self.connid)
 	
 	def post_data(self):
-		data = self._postfile.read(POST_READ_SIZE)
+		data = self._article.postfile.read(POST_READ_SIZE)
 		if len(data) == 0:
 			self.mode = MODE_POST_DONE
-			self._postfile.close()
-			self._postfile = None
+			self._article.postfile.close()
+			self._article.postfile = None
 		
 		self.send(data)
 
