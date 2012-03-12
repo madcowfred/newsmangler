@@ -146,7 +146,7 @@ class asyncNNTP(asyncore.dispatcher):
 	# -----------------------------------------------------------------------
 	
 	def handle_error(self):
-		self.logger.error('%d: unhandled exception!', self.connid, exc_info=True)
+		self.logger.exception('%d: unhandled exception!', self.connid)
 	
 	# -----------------------------------------------------------------------
 	
