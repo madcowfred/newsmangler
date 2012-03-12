@@ -1,3 +1,11 @@
+2012-03-12: * Completely rearrange directory structure to match what is
+              expected of a Python app.
+            * Improve error handling around connection teardown.
+            * Combined BaseMangler and Poster into PostMangler. No real
+              reason to have two separate classes.
+            * Don't loop until a connection connects before doing anything,
+              no posting will be done until one is idle anyway.
+
 2012-03-08: * Remove leecher.py and classes/Leecher.py, there are plenty of
               great options for downloading files already.
             * Add -d/--debug option to actually display debug information.
