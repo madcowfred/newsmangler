@@ -36,8 +36,8 @@ import sys
 from ConfigParser import ConfigParser
 from optparse import OptionParser
 
-from classes.Common import ParseConfig
-from classes.Poster import Poster
+from newsmangler.common import ParseConfig
+from newsmangler.poster import Poster
 
 # ---------------------------------------------------------------------------
 

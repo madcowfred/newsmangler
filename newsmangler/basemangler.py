@@ -37,7 +37,7 @@ import select
 import sys
 import time
 
-from classes import asyncNNTP
+from newsmangler.asyncnntp import asyncNNTP
 
 # ---------------------------------------------------------------------------
 
@@ -70,9 +70,9 @@ class BaseMangler:
 	# Connect to server
 	def connect(self):
 		for i in range(self.conf['server']['connections']):
-			conn = asyncNNTP.asyncNNTP(self, i,
-				self.conf['server']['hostname'], self.conf['server']['port'], None,
-				self.conf['server']['username'], self.conf['server']['password']
+			conn = asyncNNTP(self, i, self.conf['server']['hostname'],
+				self.conf['server']['port'], None, self.conf['server']['username'],
+				self.conf['server']['password'],
 			)
 			conn.do_connect()
 			self._conns.append(conn)

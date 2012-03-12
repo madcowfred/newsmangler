@@ -1,7 +1,4 @@
-# ---------------------------------------------------------------------------
-# $Id: poster.py 3875 2005-10-03 08:19:19Z freddie $
-# ---------------------------------------------------------------------------
-# Copyright (c) 2005, freddie@madcowdisease.org
+# Copyright (c) 2005-2012, freddie@wafflemonster.org
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,41 +25,49 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-"""Various miscellaneous useful functions."""
+from collections import OrderedDict
+from cStringIO import StringIO
 
-NM_VERSION = '0.1.0git'
+from newsmangler.yenc import yEncode
 
-import os
+class Article:
+	def __init__(self, data, begin, end, fileinfo, subject, partnum):
+		self._data = data
+		self._begin = begin
+		self._end = end
+		self._fileinfo = fileinfo
+		self._subject = subject
+		self._partnum = partnum
+		
+		self.headers = OrderedDict()
+		self.postfile = StringIO()
 
-from ConfigParser import ConfigParser
+	def prepare(self):
+		# Headers
+		for k, v in self.headers.items():
+			self.postfile.write('%s: %s\r\n' % (k, v))
+		
+		self.postfile.write('\r\n')
+		
+		# yEnc start
+		line = '=ybegin part=%d total=%d line=128 size=%d name=%s\r\n' % (
+			self._partnum, self._fileinfo['parts'], self._fileinfo['filesize'], self._fileinfo['filename']
+		)
+		self.postfile.write(line)
+		line = '=ypart begin=%d end=%d\r\n' % (self._begin + 1, self._end)
+		self.postfile.write(line)
+		
+		# yEnc data
+		partcrc = yEncode(self.postfile, self._data)
+		self._data = None
 
-# ---------------------------------------------------------------------------
-# Parse our configuration file
-def ParseConfig(cfgfile='~/.newsmangler.conf'):
-	configfile = os.path.expanduser(cfgfile)
-	if not os.path.isfile(configfile):
-		print 'ERROR: config file "%s" is missing!' % (configfile)
-		sys.exit(1)
-	
-	c = ConfigParser()
-	c.read(configfile)
-	conf = {}
-	for section in c.sections():
-		conf[section] = {}
-		for option in c.options(section):
-			v = c.get(section, option)
-			if v.isdigit():
-				v = int(v)
-			conf[section][option] = v
-	
-	return conf
+		# yEnc end
+		line = '=yend size=%d part=%d pcrc32=%s\r\n' % (self._end - self._begin, self._partnum, partcrc)
+		self.postfile.write(line)
+		
+		# And done writing for now
+		self.postfile.write('.\r\n')
+		article_size = self.postfile.tell()
+		self.postfile.seek(0, 0)
 
-# ---------------------------------------------------------------------------
-# Come up with a 'safe' filename
-def SafeFilename(filename):
-	safe_filename = os.path.basename(filename)
-	for char in [' ', "\\", '|', '/', ':', '*', '?', '<', '>']:
-		safe_filename = safe_filename.replace(char, '_')
-	return safe_filename
-
-# ---------------------------------------------------------------------------
+		return article_size

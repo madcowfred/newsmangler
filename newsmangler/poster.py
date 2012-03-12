@@ -43,11 +43,11 @@ try:
 except:
     import xml.etree.ElementTree as ET
 
-from classes import asyncNNTP
-from classes import yEnc
-from classes.article import Article
-from classes.BaseMangler import BaseMangler
-from classes.Common import *
+from newsmangler import asyncnntp
+from newsmangler import yenc
+from newsmangler.article import Article
+from newsmangler.basemangler import BaseMangler
+from newsmangler.common import *
 
 # ---------------------------------------------------------------------------
 
@@ -67,7 +67,7 @@ class Poster(BaseMangler):
 		self._par2_queue = []
 		
 		# Some sort of useful logging junk about what yEncode we're using
-		self.logger.info('Using %s module for yEnc encoding.', yEnc.yEncMode())
+		self.logger.info('Using %s module for yEnc encoding.', yenc.yEncMode())
 	
 	def post(self, newsgroup, postme, post_title=None):
 		self.newsgroup = newsgroup
@@ -132,7 +132,7 @@ class Poster(BaseMangler):
 				last_stuff = now
 				
 				for conn in self._conns:
-					if conn.state == asyncNNTP.STATE_DISCONNECTED and now >= conn.reconnect_at:
+					if conn.state == asyncnntp.STATE_DISCONNECTED and now >= conn.reconnect_at:
 						conn.do_connect()
 				
 				if self._bytes:
@@ -277,7 +277,7 @@ class Poster(BaseMangler):
 		art.headers['Subject'] = subject % (partnum)
 		art.headers['Message-ID'] = '<%.5f.%d@%s>' % (time.time(), partnum, self.conf['server']['hostname'])
 		art.headers['X-Newsposter'] = 'newsmangler %s (%s) - https://github.com/madcowfred/newsmangler\r\n' % (
-			NM_VERSION, yEnc.yEncMode())
+			NM_VERSION, yenc.yEncMode())
 
 		return art
 	
