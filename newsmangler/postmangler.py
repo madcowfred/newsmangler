@@ -73,11 +73,11 @@ class PostMangler:
         # poll, we're going to have to fake it.
         try:
             asyncore.poller = select.poll()
-            self.logger.info('Using poll()')
+            self.logger.info('Using poll() for sockets')
         except AttributeError:
             from classes.FakePoll import FakePoll
             asyncore.poller = FakePoll()
-            self.logger.info('Using FakePoll()')
+            self.logger.info('Using FakePoll() for sockets')
 
         self.conf['posting']['skip_filenames'] = self.conf['posting'].get('skip_filenames', '').split()
         
@@ -111,7 +111,9 @@ class PostMangler:
         for fd, flags in results:
             obj = asyncore.socket_map.get(fd)
             if obj is None:
-                self.logger.warning('Invalid FD for poll() - %d', fd)
+                self.logger.critical('Invalid FD for poll(): %d', fd)
+                asyncore.poller.unregister(fd)
+                continue
             
             try:
                 if flags & (select.POLLIN | select.POLLPRI):
@@ -120,7 +122,7 @@ class PostMangler:
                     obj.handle_write_event()
                 if flags & (select.POLLERR | select.POLLHUP | select.POLLNVAL):
                     obj.handle_expt_event()
-            except asyncore.ExitNow:
+            except (asyncore.ExitNow, KeyboardInterrupt, SystemExit):
                 raise
             except:
                 obj.handle_error()

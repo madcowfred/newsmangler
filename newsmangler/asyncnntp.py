@@ -66,8 +66,7 @@ class asyncNNTP(asyncore.dispatcher):
 				continue
 			else:
 				break
-		self.logger.debug('%d: SO_SNDBUF is %s', self.connid,
-			self.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF))
+		self.logger.debug('%d: SO_SNDBUF is %s', self.connid, self.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF))
 		
 		# If we have to bind our socket to an IP, do that
 		#if self.bindto is not None:
@@ -91,16 +90,17 @@ class asyncNNTP(asyncore.dispatcher):
 		asyncore.poller.register(self._fileno)
 	
 	def del_channel(self, map=None):
+		self.logger.debug('%d: removing FD %d from poller', self.connid, self._fileno)
+
 		# Remove ourselves from the async map
 		asyncore.dispatcher.del_channel(self, map)
-
-		self.logger.debug('%d: removing FD %d from poller', self.connid, self._fileno)
 		
 		# Remove ourselves from the poll object
-		try:
-			asyncore.poller.unregister(self._fileno)
-		except KeyError:
-			pass
+		if self._fileno is not None:
+			try:
+				asyncore.poller.unregister(self._fileno)
+			except KeyError:
+				pass
 
 	def close(self):
 		self.del_channel()
@@ -168,7 +168,7 @@ class asyncNNTP(asyncore.dispatcher):
 			self.logger.warning('%d: %s!', self.connid, error.args[1])
 			self.reconnect_at = time.time() + self.parent.conf['server']['reconnect_delay']
 		else:
-			self.logger.warning('Connection closed: %s', error)
+			self.logger.warning('%d: Connection closed: %s', self.connid, error)
 	
 	# There is some data waiting to be read
 	def handle_read(self):
