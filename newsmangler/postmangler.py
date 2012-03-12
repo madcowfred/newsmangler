@@ -73,10 +73,11 @@ class PostMangler:
         # poll, we're going to have to fake it.
         try:
             asyncore.poller = select.poll()
+            self.logger.info('Using poll()')
         except AttributeError:
             from classes.FakePoll import FakePoll
             asyncore.poller = FakePoll()
-        
+            self.logger.info('Using FakePoll()')
 
         self.conf['posting']['skip_filenames'] = self.conf['posting'].get('skip_filenames', '').split()
         
@@ -88,8 +89,8 @@ class PostMangler:
         self.newsgroup = None
         self.post_title = None
         
-        # Some sort of useful logging junk about what yEncode we're using
-        self.logger.info('Using %s module for yEnc encoding.', yenc.yEncMode())
+        # Some sort of useful logging junk about which yEncode we're using
+        self.logger.info('Using %s module for yEnc', yenc.yEncMode())
     
     # -----------------------------------------------------------------------
     # Connect all of our connections
@@ -139,27 +140,10 @@ class PostMangler:
         
         # Connect!
         self.connect()
-        
-        # Wait until at least one connection is ready
-        last_stuff = time.time()
-        while 1:
-            now = time.time()
-            self.poll()
-            
-            if self._idle:
-                break
-            
-            if now - last_stuff >= 1:
-                last_stuff = now
-                for conn in self._conns:
-                    if conn.state == asyncNNTP.STATE_DISCONNECTED and now >= conn.reconnect_at:
-                        conn.do_connect()
-            
-            time.sleep(0.01)
-        
+
         # And loop
         self._bytes = 0
-        start = time.time()
+        last_stuff = start = time.time()
         
         self.logger.info('Posting %d article(s)...', len(self._articles))
         
@@ -190,7 +174,7 @@ class PostMangler:
                     interval = time.time() - start
                     speed = self._bytes / interval / 1024
                     left = len(self._articles) + (len(self._conns) - len(self._idle))
-                    print '%d articles remaining - %.1fKB/s     \r' % (left, speed),
+                    print '%d article(s) remaining - %.1fKB/s     \r' % (left, speed),
                     sys.stdout.flush()
             
             # All done?
