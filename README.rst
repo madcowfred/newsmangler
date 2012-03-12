@@ -27,4 +27,4 @@ Will post as:
   ``test post please ignore [1/2] - "test.part1.rar" yEnc (01/27)``
   ``test post please ignore [2/2] - "test.part2.rar" yEnc (01/27)``
 
-Run ``python poster.py --help`` for other options.
+Run ``python mangler.py --help`` for other options.
