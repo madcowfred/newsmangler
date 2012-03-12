@@ -37,7 +37,7 @@ from ConfigParser import ConfigParser
 from optparse import OptionParser
 
 from newsmangler.common import ParseConfig
-from newsmangler.poster import Poster
+from newsmangler.postmangler import PostMangler
 
 # ---------------------------------------------------------------------------
 
@@ -127,7 +127,7 @@ def main():
 		newsgroup = newsgroup.replace(c, '')
 	
 	# And off we go
-	poster = Poster(conf, options.debug)
+	poster = PostMangler(conf, options.debug)
 	
 	if options.profile:
 		import hotshot
