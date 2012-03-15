@@ -47,7 +47,7 @@ class FileWrap:
 			self._file = open(self._filepath, 'rb')
 
 		# Seek to the right position and read the data
-		self._file.seek(begin)
+		self._file.seek(begin, 0)
 		data = self._file.read(end - begin)
 
 		# If this was the last part we should close the file
