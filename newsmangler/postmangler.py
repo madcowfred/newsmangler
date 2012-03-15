@@ -231,7 +231,7 @@ class PostMangler:
             # Skip non-files and empty files
             if not os.path.isfile(filepath):
                 continue
-            if filename in self.conf['posting']['skip_filenames']:
+            if filename in self.conf['posting']['skip_filenames'] or filename == '.newsmangler':
                 continue
             filesize = os.path.getsize(filepath)
             if filesize == 0:
@@ -357,7 +357,7 @@ class PostMangler:
                         'number': str(i + 1),
                     }
                 )
-                segment.text = str(msgid)
+                segment.text = str(msgid[1:-1])
 
         with open(filename, 'w') as nzbfile:
             ET.ElementTree(root).write(nzbfile, xml_declaration=True)
