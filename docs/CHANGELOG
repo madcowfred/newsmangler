@@ -1,3 +1,15 @@
+2012-03-15: * Finish rewrite of how articles are handled:
+              - Wrap article information in Article objects so we don't use
+                awful magical lists to hand data around.
+              - Don't read/encode article data until it's needed. This means
+                we no longer read the entire set of files to post into memory
+                at startup.
+              - Helps lay the framework for tracking which posts failed and
+                either retrying them straight away or later.
+            * Made sure that copyright notices are up to date.
+            * Add *.nzb to .gitignore.
+            * Various misc code cleanups.
+
 2012-03-12: * Completely rearrange directory structure to match what is
               expected of a Python app.
             * Improve error handling around connection teardown.
