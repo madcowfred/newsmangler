@@ -45,6 +45,7 @@ from newsmangler import asyncnntp
 from newsmangler import yenc
 from newsmangler.article import Article
 from newsmangler.common import *
+from newsmangler.filewrap import FileWrap
 
 # ---------------------------------------------------------------------------
 
@@ -155,11 +156,10 @@ class PostMangler:
             # Possibly post some more parts now
             while self._idle and self._articles:
                 article = self._articles.pop(0)
-                #postfile = StringIO()
-                art = self.build_article(*article)
+                #art = self.build_article(*article)
                 
                 conn = self._idle.pop(0)
-                conn.post_article(art)
+                conn.post_article(article)
             
             # Do some stuff every ~0.5s
             if now - last_stuff >= 0.5:
@@ -218,17 +218,9 @@ class PostMangler:
         # "dirs" mode could be a whole bunch
         else:
             for dirname in postme:
-                if dirname.endswith(os.sep):
-                    dirname = dirname[:-len(os.sep)]
-                if not dirname:
-                    continue
-                
-                self._gal_files(os.path.basename(dirname), os.listdir(dirname), basepath=dirname)
-        
-        # Debug junk
-        if 0:
-            for article in self._articles:
-                print article[1]
+                dirname = os.path.abspath(dirname)
+                if dirname:
+                    self._gal_files(os.path.basename(dirname), os.listdir(dirname), basepath=dirname)
     
     # Do the heavy lifting for generate_article_list
     def _gal_files(self, post_title, files, basepath=''):
@@ -244,20 +236,22 @@ class PostMangler:
             if filename in self.conf['posting']['skip_filenames']:
                 continue
             filesize = os.path.getsize(filepath)
-            if not filesize:
+            if filesize == 0:
                 continue
             
-            goodfiles.append((filename, filepath, filesize))
+            goodfiles.append((filepath, filename, filesize))
+        
         goodfiles.sort()
         
+        # Do stuff with files
         n = 1
-        for filename, filepath, filesize in goodfiles:
-            full, partial = divmod(filesize, article_size)
+        for filepath, filename, filesize in goodfiles:
+            parts, partial = divmod(filesize, article_size)
             if partial:
-                parts = full + 1
-            else:
-                parts = full
+                parts += 1
             
+            self._files[filepath] = FileWrap(filepath, parts)
+
             # Build a subject
             real_filename = os.path.split(filename)[1]
             
@@ -268,6 +262,7 @@ class PostMangler:
                 post_title, filenum, len(goodfiles), real_filename, temp, parts
             )
             
+            # Apply a subject prefix
             if self.conf['posting']['subject_prefix']:
                 subject = '%s %s' % (self.conf['posting']['subject_prefix'], subject)
             
@@ -281,31 +276,42 @@ class PostMangler:
             }
             
             for i in range(parts):
-                self._articles.append([fileinfo, subject, i+1])
+                partnum = i + 1
+                begin = 0 + (i * article_size)
+                end = min(filesize, partnum * article_size)
+                
+                # Build the article
+                art = Article(self._files[filepath], begin, end, fileinfo, subject, partnum)
+                art.headers['From'] = self.conf['posting']['from']
+                art.headers['Newsgroups'] = self.newsgroup
+                art.headers['Subject'] = subject % (partnum)
+                art.headers['Message-ID'] = '<%.5f.%d@%s>' % (time.time(), partnum, self.conf['server']['hostname'])
+                art.headers['X-Newsposter'] = 'newsmangler %s (%s) - https://github.com/madcowfred/newsmangler\r\n' % (
+                    NM_VERSION, yenc.yEncMode())
+
+                self._articles.append(art)
             
             n += 1
     
     # -----------------------------------------------------------------------
     # Build an article for posting.
-    def build_article(self, fileinfo, subject, partnum):
-        #(fileinfo, subject, partnum) = article
-        
+    def build_article(self, fileinfo, subject, partnum, begin, end):
         # Read the chunk of data from the file
-        f = self._files.get(fileinfo['filepath'], None)
-        if f is None:
-            self._files[fileinfo['filepath']] = f = open(fileinfo['filepath'], 'rb')
+        #f = self._files.get(fileinfo['filepath'], None)
+        #if f is None:
+        #    self._files[fileinfo['filepath']] = f = open(fileinfo['filepath'], 'rb')
         
-        begin = f.tell()
-        data = f.read(self.conf['posting']['article_size'])
-        end = f.tell()
+        #begin = f.tell()
+        #data = f.read(self.conf['posting']['article_size'])
+        #end = f.tell()
         
         # If that was the last part, close the file and throw it away
-        if partnum == fileinfo['parts']:
-            self._files[fileinfo['filepath']].close()
-            del self._files[fileinfo['filepath']]
+        #if partnum == fileinfo['parts']:
+        #    self._files[fileinfo['filepath']].close()
+        #    del self._files[fileinfo['filepath']]
         
         # Make a new article object and set headers
-        art = Article(data, begin, end, fileinfo, subject, partnum)
+        art = Article(begin, end, fileinfo, subject, partnum)
         art.headers['From'] = self.conf['posting']['from']
         art.headers['Newsgroups'] = self.newsgroup
         art.headers['Subject'] = subject % (partnum)
@@ -313,7 +319,7 @@ class PostMangler:
         art.headers['X-Newsposter'] = 'newsmangler %s (%s) - https://github.com/madcowfred/newsmangler\r\n' % (
             NM_VERSION, yenc.yEncMode())
 
-        return art
+        self._articles.append(art)
     
     # -----------------------------------------------------------------------
     # Generate a .NZB file!

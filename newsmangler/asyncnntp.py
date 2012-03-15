@@ -263,7 +263,7 @@ class asyncNNTP(asyncore.dispatcher):
 					#       messages are constructed
 					m = MSGID_RE.search(line)
 					if m:
-						print 'changing Message-ID to %s' % (m.group(1))
+						self.logger.debug('%d: changing Message-ID to %s', self.connid, m.group(1))
 						self._article.headers['Message-ID'] = m.group(1)
 
 					# Prepare the article for posting
