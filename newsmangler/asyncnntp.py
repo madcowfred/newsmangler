@@ -80,7 +80,7 @@ class asyncNNTP(asyncore.dispatcher):
         self.reconnect_at = 0
         self.mode = MODE_AUTH
         self.state = STATE_DISCONNECTED
-    
+
     def do_connect(self):
         # Create the socket
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -108,6 +108,12 @@ class asyncNNTP(asyncore.dispatcher):
             self.state = STATE_CONNECTING
             self.logger.debug('%d: connecting to %s:%s', self.connid, self.host, self.port)
     
+    # -----------------------------------------------------------------------
+    # Check to see if it's time to reconnect yet
+    def reconnect_check(self, now):
+    	if self.state == asyncnntp.STATE_DISCONNECTED and now >= self.reconnect_at:
+        	self.do_connect()
+
     def add_channel(self, map=None):
         self.logger.debug('%d: adding FD %d to poller', self.connid, self._fileno)
         
@@ -134,6 +140,7 @@ class asyncNNTP(asyncore.dispatcher):
         if self.socket is not None:
             self.socket.close()
     
+    # -----------------------------------------------------------------------
     # We only want to be writable if we're connecting, or something is in our
     # buffer.
     def writable(self):
@@ -160,9 +167,10 @@ class asyncNNTP(asyncore.dispatcher):
         # If we're posting, we might need to read some more data from our file
         if self.mode == MODE_POST_DATA:
             self.parent._bytes += sent
-            if self._writebuf == '':
+            if len(self._writebuf) == 0:
                 self.post_data()
     
+    # -----------------------------------------------------------------------
     # We want buffered output, duh
     def send(self, data):
         self._writebuf += data

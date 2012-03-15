@@ -126,6 +126,7 @@ class PostMangler:
                 obj.handle_error()
 
     # -----------------------------------------------------------------------
+    
     def post(self, newsgroup, postme, post_title=None):
         self.newsgroup = newsgroup
         self.post_title = post_title
