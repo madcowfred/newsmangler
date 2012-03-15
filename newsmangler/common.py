@@ -63,3 +63,21 @@ def SafeFilename(filename):
 	return safe_filename
 
 # ---------------------------------------------------------------------------
+# Return a nicely formatted size
+MB = 1024.0 * 1024
+def NiceSize(bytes):
+        if bytes < 1024:
+                return '%dB' % (bytes)
+        elif bytes < MB:
+                return '%.1fKB' % (bytes / 1024.0)
+        else:
+                return '%.1fMB' % (bytes / MB)
+
+# Return a nicely formatted time
+def NiceTime(seconds):
+        hours, left = divmod(seconds, 60 * 60)
+        mins, secs = divmod(left, 60)
+        if hours:
+                return '%dh %dm %ds' % (hours, mins, secs)
+        else:
+                return '%dm %ds' % (mins, secs)

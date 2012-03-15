@@ -126,7 +126,7 @@ class PostMangler:
                 obj.handle_error()
 
     # -----------------------------------------------------------------------
-    
+
     def post(self, newsgroup, postme, post_title=None):
         self.newsgroup = newsgroup
         self.post_title = post_title
@@ -156,19 +156,16 @@ class PostMangler:
             
             # Possibly post some more parts now
             while self._idle and self._articles:
-                article = self._articles.pop(0)
-                #art = self.build_article(*article)
-                
                 conn = self._idle.pop(0)
+                article = self._articles.pop(0)
                 conn.post_article(article)
             
-            # Do some stuff every ~0.5s
+            # Do some stuff every now and then
             if now - last_stuff >= 0.5:
                 last_stuff = now
                 
                 for conn in self._conns:
-                    if conn.state == asyncnntp.STATE_DISCONNECTED and now >= conn.reconnect_at:
-                        conn.do_connect()
+                	conn.reconnect_check(now)
                 
                 if self._bytes:
                     interval = time.time() - start
@@ -180,9 +177,9 @@ class PostMangler:
             # All done?
             if len(self._articles) == 0 and len(self._idle) == self.conf['server']['connections']:
                 interval = time.time() - start
-                speed = self._bytes / interval / 1024
-                self.logger.info('Posting complete - %d bytes in %.2fs (%.1fKB/s)',
-                    self._bytes, interval, speed)
+                speed = self._bytes / interval
+                self.logger.info('Posting complete - %s in %s (%s/s)',
+                    NiceSize(self._bytes), NiceTime(interval), NiceSize(speed))
                 
                 # If we have some msgids left over, we might have to generate
                 # a .NZB

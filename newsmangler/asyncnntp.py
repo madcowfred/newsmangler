@@ -111,7 +111,7 @@ class asyncNNTP(asyncore.dispatcher):
     # -----------------------------------------------------------------------
     # Check to see if it's time to reconnect yet
     def reconnect_check(self, now):
-    	if self.state == asyncnntp.STATE_DISCONNECTED and now >= self.reconnect_at:
+    	if self.state == STATE_DISCONNECTED and now >= self.reconnect_at:
         	self.do_connect()
 
     def add_channel(self, map=None):
@@ -276,7 +276,7 @@ class asyncNNTP(asyncore.dispatcher):
 
                     # Prepare the article for posting
                     article_size = self._article.prepare()
-                    self.parent.remember_msgid(article_size, self._article)# self._article._remember_subject)
+                    self.parent.remember_msgid(article_size, self._article)
 
                     self.post_data()
                 
@@ -297,9 +297,11 @@ class asyncNNTP(asyncore.dispatcher):
                 resp = line.split(None, 1)[0]
                 # Ok
                 if resp == '240':
+                    #self.parent.post_success(self._article)
+
                     self.mode = MODE_COMMAND
                     self.parent._idle.append(self)
-                
+
                 # Not ok
                 elif resp.startswith('44'):
                     self.mode = MODE_COMMAND
