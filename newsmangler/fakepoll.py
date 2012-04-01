@@ -34,6 +34,9 @@ import socket
 select.POLLIN = 1
 select.POLLOUT = 2
 select.POLLNVAL = 4
+select.POLLPRI = 8
+select.POLLERR = 16
+select.POLLHUP = 32
 
 # ---------------------------------------------------------------------------
 

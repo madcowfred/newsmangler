@@ -73,7 +73,7 @@ class PostMangler:
             asyncore.poller = select.poll()
             self.logger.info('Using poll() for sockets')
         except AttributeError:
-            from classes.FakePoll import FakePoll
+            from newsmangler.fakepoll import FakePoll
             asyncore.poller = FakePoll()
             self.logger.info('Using FakePoll() for sockets')
 

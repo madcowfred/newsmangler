@@ -30,6 +30,7 @@
 NM_VERSION = '0.1.0git'
 
 import os
+import sys
 
 from ConfigParser import ConfigParser
 
