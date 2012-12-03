@@ -205,7 +205,8 @@ class PostMangler:
             subj = article._subject % (1)
             if subj not in self._msgids:
                 self._msgids[subj] = [int(time.time())]
-            self._msgids[subj].append((article.headers['Message-ID'], article_size))
+            #self._msgids[subj].append((article.headers['Message-ID'], article_size))
+            self._msgids[subj].append((article, article_size))
     
     # -----------------------------------------------------------------------
     # Generate the list of articles we need to post
@@ -350,14 +351,16 @@ class PostMangler:
 
             # segments
             segments = ET.SubElement(f, 'segments')
-            for i, (msgid, article_size) in enumerate(msgids):
+            temp = [(m._partnum, m, article_size) for m, article_size in msgids]
+            temp.sort()
+            for partnum, article, article_size in temp:
                 segment = ET.SubElement(segments, 'segment',
                     {
                         'bytes': str(article_size),
-                        'number': str(i + 1),
+                        'number': str(partnum),
                     }
                 )
-                segment.text = str(msgid[1:-1])
+                segment.text = str(article.headers['Message-ID'][1:-1])
 
         with open(filename, 'w') as nzbfile:
             ET.ElementTree(root).write(nzbfile, xml_declaration=True)
