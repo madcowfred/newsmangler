@@ -1,4 +1,12 @@
-===========
+==================
+**IMPORTANT NOTE**
+==================
+This project is no longer being actively maintained. It still works fine but no
+new features will ever be appearing. Check out `my GoPostStuff project <https://github.com/madcowfred/GoPostStuff/>`_
+for a new and much scarier version of the idea.
+
+
+
 newsmangler
 ===========
 
